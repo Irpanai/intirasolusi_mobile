@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/loading_widget.dart';
+import '../../../core/widgets/gradient_header.dart';
+import '../../../core/widgets/app_input_styles.dart';
 import '../../../data/repositories/location_repository.dart';
 import '../../../data/models/location_model.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -74,6 +76,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     'Rp 10.000.000 - 20.000.000',
     '> Rp 20.000.000',
   ];
+
+  String? _parseMonthlyIncome(dynamic income) {
+    if (income == null) return null;
+    final str = income.toString().trim();
+    if (_incomeOptions.contains(str)) return str;
+
+    final numVal = double.tryParse(str.replaceAll(RegExp(r'[^\d]'), ''));
+    if (numVal != null) {
+      if (numVal < 3000000) return '< Rp 3.000.000';
+      if (numVal <= 5000000) return 'Rp 3.000.000 - 5.000.000';
+      if (numVal <= 10000000) return 'Rp 5.000.000 - 10.000.000';
+      if (numVal <= 20000000) return 'Rp 10.000.000 - 20.000.000';
+      return '> Rp 20.000.000';
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -232,7 +250,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           }
           _addressController.text = customer.address ?? '';
           _occupationController.text = customer.occupation ?? '';
-          _selectedMonthlyIncome = customer.monthlyIncome;
+          _selectedMonthlyIncome = _parseMonthlyIncome(customer.monthlyIncome);
           _emergencyNameController.text = customer.emergencyContactName ?? '';
           _emergencyPhoneController.text = customer.emergencyContactPhone ?? '';
           _emergencyRelationController.text = customer.emergencyContactRelation ?? '';
@@ -609,13 +627,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           if (_isSubmitting) {
             setState(() => _isSubmitting = false);
             _showSuccessDialog();
-          } else if (_isLoading) {
+          } else {
             // Profile data loaded from API, populate form
             _loadProfile();
           }
-        } else if (state is AuthError && _isSubmitting) {
-          setState(() => _isSubmitting = false);
-          _showErrorDialog(state.message);
+        } else if (state is AuthError) {
+          if (_isSubmitting) {
+            setState(() => _isSubmitting = false);
+            _showErrorDialog(state.message);
+          } else {
+            setState(() => _isLoading = false);
+          }
         }
       },
       child: Scaffold(
@@ -641,60 +663,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, bottom: 48, left: 20, right: 20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Kembali',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Edit Profil',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Perbarui informasi profil Anda',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
+    return GradientHeader(
+      showBackButton: true,
+      paddingBottom: 36,
+      child: const GradientHeaderTitle(
+        title: 'Edit Profil Saya',
+        subtitle: 'Perbarui identitas, kontak, dan alamat domisili',
       ),
     );
   }
@@ -703,31 +677,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: AppInputStyles.cardDecoration(),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
             // NIK
             _buildLabel('NIK (No. KTP)', required: true),
             const SizedBox(height: 8),
             TextFormField(
               controller: _nikController,
               decoration: _inputDecoration('16 digit NIK').copyWith(
-                filled: true,
-                fillColor: _isProfileComplete ? Colors.grey.shade100 : Colors.white,
+                fillColor: _isProfileComplete ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
               ),
               enabled: !_isProfileComplete,
               keyboardType: TextInputType.number,
@@ -740,9 +703,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               },
             ),
             if (_isProfileComplete)
-              Text(
-                'NIK tidak dapat diubah setelah profil lengkap',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'NIK tidak dapat diubah setelah profil lengkap',
+                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                ),
               ),
             const SizedBox(height: 16),
 
@@ -783,8 +749,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             vertical: 14,
                           ),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFFF8FAFC),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -796,13 +763,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                 style: TextStyle(
                                   color: _birthDate != null
                                       ? AppColors.textPrimary
-                                      : Colors.grey.shade400,
+                                      : const Color(0xFF94A3B8),
                                 ),
                               ),
-                              Icon(
-                                Icons.calendar_today,
+                              const Icon(
+                                Icons.calendar_today_outlined,
                                 size: 18,
-                                color: Colors.grey.shade400,
+                                color: Color(0xFF94A3B8),
                               ),
                             ],
                           ),
@@ -959,7 +926,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             _buildLabel('Penghasilan Bulanan'),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedMonthlyIncome,
+              value: _incomeOptions.contains(_selectedMonthlyIncome) ? _selectedMonthlyIncome : null,
               decoration: _inputDecoration('Pilih Kisaran Penghasilan'),
               isExpanded: true,
               items: _incomeOptions.map((income) {
@@ -1043,22 +1010,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? const Color(0xFF15803D) : const Color(0xFFE2E8F0),
+            width: isSelected ? 1.8 : 1,
           ),
-          borderRadius: BorderRadius.circular(10),
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.05) : null,
+          borderRadius: BorderRadius.circular(14),
+          color: isSelected ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 20),
+            Icon(icon, color: isSelected ? const Color(0xFF15803D) : color, size: 20),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? const Color(0xFF15803D) : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
           ],
@@ -1069,20 +1036,28 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Widget _buildSectionHeader(String title, IconData icon) {
     return Container(
-      padding: const EdgeInsets.only(top: 16),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      padding: const EdgeInsets.only(top: 20, bottom: 6),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 18),
+          ),
+          const SizedBox(width: 10),
           Text(
             title,
             style: const TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 15,
               color: AppColors.textPrimary,
+              letterSpacing: -0.2,
             ),
           ),
         ],
@@ -1091,57 +1066,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Widget _buildLabel(String text, {bool required = false}) {
-    return Row(
-      children: [
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        if (required)
-          const Text(
-            ' *',
-            style: TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-      ],
-    );
+    return AppInputStyles.formLabel(text, required: required);
   }
 
   InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey.shade400),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      counterText: '',
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red),
-      ),
-      disabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-    );
+    return AppInputStyles.inputDecoration(hintText: hint);
   }
 
   Widget _buildLocationSelector({
@@ -1168,11 +1097,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               Expanded(
                 child: Text(
                   currentName,
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 15, color: Color(0xFF1E293B)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
+              const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
             ],
           ),
         ),
@@ -1198,13 +1127,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.grey.shade50,
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFFF8FAFC),
       ),
       child: Row(
         children: [
-          SizedBox(
+          const SizedBox(
             width: 16,
             height: 16,
             child: CircularProgressIndicator(
@@ -1215,7 +1144,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           const SizedBox(width: 12),
           Text(
             text,
-            style: TextStyle(color: Colors.grey.shade500),
+            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
           ),
         ],
       ),

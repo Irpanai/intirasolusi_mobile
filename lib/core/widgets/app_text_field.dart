@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_input_styles.dart';
 
 class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
@@ -9,6 +10,8 @@ class AppTextField extends StatelessWidget {
   final bool obscureText;
   final IconData? prefixIcon;
   final Widget? suffixIcon;
+  final String? prefixText;
+  final String? suffixText;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
   final void Function(String)? onFieldSubmitted;
@@ -16,6 +19,7 @@ class AppTextField extends StatelessWidget {
   final int? maxLength;
   final bool enabled;
   final bool readOnly;
+  final bool required;
   final VoidCallback? onTap;
   final TextInputAction? textInputAction;
   final FocusNode? focusNode;
@@ -30,6 +34,8 @@ class AppTextField extends StatelessWidget {
     this.obscureText = false,
     this.prefixIcon,
     this.suffixIcon,
+    this.prefixText,
+    this.suffixText,
     this.validator,
     this.onChanged,
     this.onFieldSubmitted,
@@ -37,6 +43,7 @@ class AppTextField extends StatelessWidget {
     this.maxLength,
     this.enabled = true,
     this.readOnly = false,
+    this.required = false,
     this.onTap,
     this.textInputAction,
     this.focusNode,
@@ -47,15 +54,8 @@ class AppTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label != null) ...[
-          Text(
-            label!,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-          const SizedBox(height: 8),
-        ],
+        if (label != null)
+          AppInputStyles.formLabel(label!, required: required),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
@@ -70,11 +70,22 @@ class AppTextField extends StatelessWidget {
           onTap: onTap,
           textInputAction: textInputAction,
           focusNode: focusNode,
-          decoration: InputDecoration(
-            hintText: hint,
-            errorText: errorText,
-            prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1E293B),
+          ),
+          decoration: AppInputStyles.inputDecoration(
+            hint: hint,
+            prefixIcon: prefixIcon != null
+                ? Icon(prefixIcon, size: 20, color: const Color(0xFF64748B))
+                : null,
             suffixIcon: suffixIcon,
+            prefixText: prefixText,
+            suffixText: suffixText,
+            enabled: enabled,
+          ).copyWith(
+            errorText: errorText,
           ),
         ),
       ],

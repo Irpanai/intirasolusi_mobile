@@ -20,22 +20,30 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // If json has nested 'user' key (e.g. from /me or /profile endpoint: {user: {...}, customer: {...}})
+    Map<String, dynamic> userMap = json;
+    dynamic customerData = json['customer'];
+    if (json.containsKey('user') && json['user'] is Map<String, dynamic>) {
+      userMap = json['user'] as Map<String, dynamic>;
+      customerData = json['customer'] ?? userMap['customer'];
+    }
+
     return UserModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String?,
-      emailVerifiedAt: json['email_verified_at'] != null
-          ? DateTime.parse(json['email_verified_at'] as String)
+      id: (userMap['id'] is num) ? (userMap['id'] as num).toInt() : (int.tryParse(userMap['id']?.toString() ?? '') ?? 0),
+      name: (userMap['name'] ?? userMap['full_name'] ?? '')?.toString() ?? '',
+      email: (userMap['email'] ?? '')?.toString() ?? '',
+      phone: userMap['phone']?.toString(),
+      emailVerifiedAt: userMap['email_verified_at'] != null
+          ? DateTime.tryParse(userMap['email_verified_at'].toString())
           : null,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+      createdAt: userMap['created_at'] != null
+          ? DateTime.tryParse(userMap['created_at'].toString())
           : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+      updatedAt: userMap['updated_at'] != null
+          ? DateTime.tryParse(userMap['updated_at'].toString())
           : null,
-      customer: json['customer'] != null
-          ? CustomerModel.fromJson(json['customer'] as Map<String, dynamic>)
+      customer: customerData != null && customerData is Map<String, dynamic>
+          ? CustomerModel.fromJson(customerData)
           : null,
     );
   }
@@ -121,45 +129,41 @@ class CustomerModel {
 
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
     return CustomerModel(
-      id: json['id'] as int? ?? 0,
-      userId: json['user_id'] as int? ?? 0,
-      code: json['code'] as String?,
-      nik: json['nik'] as String?,
-      fullName: json['full_name'] as String?,
-      birthPlace: json['birth_place'] as String?,
-      birthDate: json['birth_date'] as String?,
-      gender: json['gender'] as String?,
-      phone: json['phone'] as String?,
-      address: json['address'] as String?,
-      provinceCode: json['province_code'] as String?,
-      // API returns 'province' for name, fallback to 'province_name'
-      provinceName: (json['province'] ?? json['province_name']) as String?,
-      cityCode: json['city_code'] as String?,
-      // API returns 'city' for name, fallback to 'city_name'
-      cityName: (json['city'] ?? json['city_name']) as String?,
-      districtCode: json['district_code'] as String?,
-      // API returns 'district' for name, fallback to 'district_name'
-      districtName: (json['district'] ?? json['district_name']) as String?,
-      villageCode: json['village_code'] as String?,
-      // API returns 'village' for name, fallback to 'village_name'
-      villageName: (json['village'] ?? json['village_name']) as String?,
-      postalCode: json['postal_code'] as String?,
-      occupation: json['occupation'] as String?,
-      monthlyIncome: json['monthly_income'] as String?,
-      emergencyContactName: json['emergency_contact_name'] as String?,
-      emergencyContactPhone: json['emergency_contact_phone'] as String?,
-      emergencyContactRelation: json['emergency_contact_relation'] as String?,
-      idCardPhoto: json['id_card_photo'] as String?,
-      selfiePhoto: json['selfie_photo'] as String?,
-      isProfileComplete: json['is_profile_complete'] as bool? ?? false,
+      id: (json['id'] is num) ? (json['id'] as num).toInt() : (int.tryParse(json['id']?.toString() ?? '') ?? 0),
+      userId: (json['user_id'] is num) ? (json['user_id'] as num).toInt() : (int.tryParse(json['user_id']?.toString() ?? '') ?? 0),
+      code: json['code']?.toString(),
+      nik: json['nik']?.toString(),
+      fullName: (json['full_name'] ?? json['name'])?.toString(),
+      birthPlace: json['birth_place']?.toString(),
+      birthDate: json['birth_date']?.toString(),
+      gender: json['gender']?.toString(),
+      phone: json['phone']?.toString(),
+      address: json['address']?.toString(),
+      provinceCode: json['province_code']?.toString(),
+      provinceName: (json['province'] ?? json['province_name'])?.toString(),
+      cityCode: json['city_code']?.toString(),
+      cityName: (json['city'] ?? json['city_name'])?.toString(),
+      districtCode: json['district_code']?.toString(),
+      districtName: (json['district'] ?? json['district_name'])?.toString(),
+      villageCode: json['village_code']?.toString(),
+      villageName: (json['village'] ?? json['village_name'])?.toString(),
+      postalCode: json['postal_code']?.toString(),
+      occupation: json['occupation']?.toString(),
+      monthlyIncome: json['monthly_income']?.toString(),
+      emergencyContactName: json['emergency_contact_name']?.toString(),
+      emergencyContactPhone: json['emergency_contact_phone']?.toString(),
+      emergencyContactRelation: json['emergency_contact_relation']?.toString(),
+      idCardPhoto: json['id_card_photo']?.toString(),
+      selfiePhoto: json['selfie_photo']?.toString(),
+      isProfileComplete: json['is_profile_complete'] == true || json['is_profile_complete'] == 1,
       verifiedAt: json['verified_at'] != null
-          ? DateTime.parse(json['verified_at'] as String)
+          ? DateTime.tryParse(json['verified_at'].toString())
           : null,
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
     );
   }

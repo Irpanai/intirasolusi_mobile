@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../config/theme/app_colors.dart';
 
 class GradientHeader extends StatelessWidget {
   final Widget child;
@@ -11,7 +10,7 @@ class GradientHeader extends StatelessWidget {
   const GradientHeader({
     super.key,
     required this.child,
-    this.paddingBottom = 48,
+    this.paddingBottom = 40,
     this.showBackButton = false,
     this.onBackPressed,
     this.actions,
@@ -22,21 +21,25 @@ class GradientHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           colors: [
-            AppColors.primary,
-            AppColors.primaryDark,
+            Color(0xFF14532D), // Deep green 900
+            Color(0xFF15803D), // Emerald 700
           ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
         bottom: false,
         child: Padding(
           padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 8,
+            left: 20,
+            right: 20,
+            top: 10,
             bottom: paddingBottom,
           ),
           child: Column(
@@ -49,22 +52,36 @@ class GradientHeader extends StatelessWidget {
                     if (showBackButton)
                       GestureDetector(
                         onTap: onBackPressed ?? () => Navigator.pop(context),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.arrow_back,
-                              color: Colors.white.withValues(alpha: 0.8),
-                              size: 20,
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              width: 1,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Kembali',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontSize: 14,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white,
+                                size: 14,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Text(
+                                'Kembali',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     const Spacer(),
@@ -100,7 +117,7 @@ class GradientHeaderTitle extends StatelessWidget {
           title,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -109,8 +126,8 @@ class GradientHeaderTitle extends StatelessWidget {
           Text(
             subtitle!,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 12.5,
             ),
           ),
         ],

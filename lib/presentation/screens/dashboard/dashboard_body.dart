@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../blocs/dashboard/dashboard_bloc.dart';
 import '../../blocs/article/article_bloc.dart';
+import '../../blocs/auth/auth_bloc.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
@@ -19,6 +20,8 @@ class DashboardBody extends StatefulWidget {
 }
 
 class _DashboardBodyState extends State<DashboardBody> {
+  bool _isBalanceVisible = true;
+
   @override
   void initState() {
     super.initState();
@@ -30,8 +33,19 @@ class _DashboardBodyState extends State<DashboardBody> {
   Widget build(BuildContext context) {
     return BlocBuilder<DashboardBloc, DashboardState>(
       builder: (context, state) {
-        if (state is DashboardLoading) {
-          return const LoadingWidget(message: 'Memuat dashboard...');
+        if (state is DashboardLoaded) {
+          return _buildDashboardContent(context, state.data);
+        }
+
+        // Fast-path: If loading or initial, immediately render using authenticated user data
+        final authState = context.watch<AuthBloc>().state;
+        if (authState is AuthAuthenticated) {
+          final fallbackData = DashboardData.fromUser(
+            authState.user.name,
+            authState.user.customer?.code,
+            isProfileComplete: authState.user.customer?.isProfileComplete ?? false,
+          );
+          return _buildDashboardContent(context, fallbackData);
         }
 
         if (state is DashboardError) {
@@ -41,123 +55,208 @@ class _DashboardBodyState extends State<DashboardBody> {
           );
         }
 
-        if (state is DashboardLoaded) {
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<DashboardBloc>().add(DashboardRefresh());
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                children: [
-                  // Header with Stats Card
-                  _buildHeader(context, state.data),
-
-                  // Content
-                  _buildContent(context, state.data),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return const SizedBox.shrink();
+        return const LoadingWidget(message: 'Memuat dashboard...');
       },
     );
   }
 
-  Widget _buildHeader(BuildContext context, DashboardData data) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, bottom: 24, left: 20, right: 20),
-      color: AppColors.background,
-      child: SafeArea(
-        bottom: false,
+  Widget _buildDashboardContent(BuildContext context, DashboardData data) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<DashboardBloc>().add(DashboardRefresh());
+        context.read<ArticleBloc>().add(ArticleLoadLatest(count: 3));
+      },
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row - Greeting
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Selamat ${_getGreeting()}',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      data.customer.name,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                GestureDetector(
-                  onTap: () {
-                    // TODO: Show notifications
-                  },
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: AppColors.textPrimary,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+            // Signature Curved Green Header with Hero Card
+            _buildHeader(context, data),
 
-            // Main Stats Card - Eye catching
-            _buildMainStatsCard(data),
+            // Content Body
+            _buildContent(context, data),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMainStatsCard(DashboardData data) {
-    final hasActiveTransaction = data.stats.activeTransactions > 0;
+  Widget _buildHeader(BuildContext context, DashboardData data) {
+    final customerName = data.customer.name.trim();
+    final displayName = customerName.isNotEmpty ? customerName : 'Nasabah';
+    final customerCode = (data.customer.code != null && data.customer.code!.isNotEmpty)
+        ? data.customer.code!
+        : 'Nasabah Terdaftar';
+
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF14532D), // Deep green 900
+            Color(0xFF15803D), // Emerald 700
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Bar: Avatar + Greeting + Notification Bell
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      // Avatar circle
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.18),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            displayName.isNotEmpty ? displayName[0].toUpperCase() : 'N',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Halo, $displayName!',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF4ADE80),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Anggota AKTIF • $customerCode',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  // Notification Bell
+                  GestureDetector(
+                    onTap: () => _showNotifications(context, data),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              width: 1,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                            size: 21,
+                          ),
+                        ),
+                        if (data.alerts.isNotEmpty || data.stats.overdueTransactions > 0)
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // The Signature Hero Card (Total Akumulasi Pinjaman)
+              _buildHeroBalanceCard(data),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroBalanceCard(DashboardData data) {
+    final hasActive = data.stats.activeTransactions > 0;
     final hasOverdue = data.stats.overdueTransactions > 0;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: hasOverdue 
-              ? [const Color(0xFFFF6B6B), const Color(0xFFEE5A5A)]
-              : [AppColors.primary, AppColors.primaryDark],
+          colors: [
+            Color(0xFF0D5428), // Deep forest pine
+            Color(0xFF146834), // Emerald deep
+          ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.18),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: (hasOverdue ? const Color(0xFFFF6B6B) : AppColors.primary).withValues(alpha: 0.3),
-            blurRadius: 20,
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 18,
             offset: const Offset(0, 8),
           ),
         ],
@@ -165,126 +264,139 @@ class _DashboardBodyState extends State<DashboardBody> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon and label row
+          // Top row: Wallet icon + Title + Eye toggle button
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  hasOverdue ? Icons.warning_rounded : Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      hasOverdue ? 'Perhatian!' : 'Total Pinjaman Aktif',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    if (hasOverdue) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        '${data.stats.overdueTransactions} transaksi jatuh tempo',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ],
+                    child: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Total Akumulasi Pinjaman',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isBalanceVisible = !_isBalanceVisible;
+                  });
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    _isBalanceVisible
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    size: 20,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          
-          // Main message
-          if (hasActiveTransaction) ...[
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  height: 1.4,
+          const SizedBox(height: 12),
+
+          // Total Saldo Label
+          Text(
+            'Total Saldo Pinjaman',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // Big Amount Typography
+          Text(
+            _isBalanceVisible
+                ? (data.stats.totalLoanFormatted.isNotEmpty
+                    ? data.stats.totalLoanFormatted
+                    : Formatters.formatCurrency(data.stats.totalLoan))
+                : 'Rp ••••••••',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 27,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Bottom status row + Shield Security icon
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: hasOverdue
+                      ? const Color(0xFFEF4444).withValues(alpha: 0.9)
+                      : Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      hasOverdue ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+                      color: Colors.white,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      hasOverdue
+                          ? '${data.stats.overdueTransactions} Jatuh Tempo'
+                          : (hasActive
+                              ? '${data.stats.activeTransactions} Transaksi Aktif'
+                              : 'Bebas Pinjaman Aktif'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
                 children: [
-                  const TextSpan(text: 'Kamu memiliki '),
-                  TextSpan(
-                    text: '${data.stats.activeTransactions} transaksi gadai',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Icon(
+                    Icons.verified_user_outlined,
+                    color: Colors.white.withValues(alpha: 0.75),
+                    size: 17,
                   ),
-                  const TextSpan(text: ' aktif'),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Terdaftar & Aman',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              data.stats.totalLoanFormatted,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ] else ...[
-            const Text(
-              'Belum ada transaksi aktif',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Ajukan gadai pertamamu sekarang!',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 14,
-              ),
-            ),
-          ],
-          
-          const SizedBox(height: 16),
-          
-          // Quick stats row
-          // Row(
-          //   children: [
-          //     _buildMiniStat(
-          //       icon: Icons.receipt_long_outlined,
-          //       label: 'Aktif',
-          //       value: '${data.stats.activeTransactions}',
-          //     ),
-          //     const SizedBox(width: 24),
-          //     _buildMiniStat(
-          //       icon: Icons.pending_actions_outlined,
-          //       label: 'Pending',
-          //       value: '${data.stats.pendingRequests}',
-          //     ),
-          //     if (hasOverdue) ...[
-          //       const SizedBox(width: 24),
-          //       _buildMiniStat(
-          //         icon: Icons.warning_amber_outlined,
-          //         label: 'Jatuh Tempo',
-          //         value: '${data.stats.overdueTransactions}',
-          //         isWarning: true,
-          //       ),
-          //     ],
-          //   ],
-          // ),
+            ],
+          ),
         ],
       ),
     );
@@ -292,17 +404,23 @@ class _DashboardBodyState extends State<DashboardBody> {
 
   Widget _buildContent(BuildContext context, DashboardData data) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
-          
-          // Quick Actions
-          _buildQuickActions(context),
-          const SizedBox(height: 16),
+          // Pagination Indicator Dots (Hero Card Accent)
+          _buildDotsIndicator(),
+          const SizedBox(height: 20),
 
-          // Financial Tools Card
+          // Quick Actions Grid (4 Icon Buttons)
+          _buildQuickActions(context),
+          const SizedBox(height: 22),
+
+          // Info & Promo Intira Banner
+          _buildPromoBanner(context),
+          const SizedBox(height: 20),
+
+          // 9 Financial Tools Card
           _buildFinancialToolsCard(context),
           const SizedBox(height: 20),
 
@@ -312,143 +430,279 @@ class _DashboardBodyState extends State<DashboardBody> {
             const SizedBox(height: 16),
           ],
 
-          // Alerts (filter out profile-related alerts since _buildProfileAlert already handles it)
-          ...data.alerts
-              .where((alert) =>
-                  !alert.message.toLowerCase().contains('lengkapi') &&
-                  !alert.message.toLowerCase().contains('profil'))
-              .map((alert) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildAlertBanner(context, alert),
-                  )),
-
-          // Recent Requests Section
-          if (data.recentRequests.isNotEmpty) ...[
-            _buildSectionHeader(
-              context,
-              'Pengajuan Terbaru',
-              () => Navigator.pushNamed(context, '/pawn-requests'),
-            ),
-            const SizedBox(height: 12),
-            ...data.recentRequests
-                .take(3)
-                .map((req) => _buildRequestCard(context, req)),
+          // Active Overdue Warning Banner
+          if (data.stats.overdueTransactions > 0) ...[
+            _buildOverdueAlertBanner(context, data.stats.overdueTransactions),
             const SizedBox(height: 16),
           ],
 
           // Active Transactions Section
-          if (data.activeTransactions.isNotEmpty) ...[
-            _buildSectionHeader(
-              context,
-              'Transaksi Aktif',
-              () => Navigator.pushNamed(context, '/transactions'),
-            ),
-            const SizedBox(height: 12),
-            ...data.activeTransactions
-                .take(3)
-                .map((tx) => _buildTransactionCard(context, tx)),
-            const SizedBox(height: 16),
+          _buildActiveTransactionsSection(context, data),
+          const SizedBox(height: 20),
+
+          // Recent Requests Section
+          if (data.recentRequests.isNotEmpty) ...[
+            _buildRecentRequestsSection(context, data),
+            const SizedBox(height: 20),
           ],
 
-          // Latest News Section
+          // Educational Articles / News Section
           _buildLatestNewsSection(context),
+        ],
+      ),
+    );
+  }
 
-          const SizedBox(height: 100), // Space for bottom nav
+  Widget _buildDotsIndicator() {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 20,
+            height: 5,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              shape: BoxShape.circle,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Menu Cepat',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildActionItem(
+          context,
+          icon: Icons.calculate_outlined,
+          label: 'Simulasi',
+          onTap: () => Navigator.pushNamed(context, '/calculator'),
+        ),
+        _buildActionItem(
+          context,
+          icon: Icons.add_card_outlined,
+          label: 'Ajukan Gadai',
+          onTap: () => NavigationHelper.goToPawnRequestCreate(context),
+        ),
+        _buildActionItem(
+          context,
+          icon: Icons.receipt_long_outlined,
+          label: 'Bayar / Tebus',
+          onTap: () => Navigator.pushNamed(context, '/transactions'),
+        ),
+        _buildActionItem(
+          context,
+          icon: Icons.storefront_outlined,
+          label: 'Cabang',
+          onTap: () => Navigator.pushNamed(context, '/branches'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4), // Mint tint
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFDCFCE7),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  icon,
+                  color: AppColors.primary,
+                  size: 26,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildQuickActionItem(
-                icon: Icons.add_box_rounded,
-                label: 'Pengajuan',
-                color: AppColors.primary,
-                onTap: () => NavigationHelper.goToPawnRequestCreate(context),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
               ),
-              _buildQuickActionItem(
-                icon: Icons.calculate_rounded,
-                label: 'Kalkulator',
-                color: AppColors.secondary,
-                onTap: () => Navigator.pushNamed(context, '/calculator'),
-              ),
-              _buildQuickActionItem(
-                icon: Icons.receipt_long_rounded,
-                label: 'Transaksi',
-                color: Colors.orange,
-                onTap: () => Navigator.pushNamed(context, '/transactions'),
-              ),
-              _buildQuickActionItem(
-                icon: Icons.location_on_rounded,
-                label: 'Cabang',
-                color: Colors.purple,
-                onTap: () => Navigator.pushNamed(context, '/branches'),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildQuickActionItem({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
+  Widget _buildPromoBanner(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Info & Promo Intira',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/articles'),
+              child: const Text(
+                'Lihat Semua',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () => Navigator.pushNamed(context, '/articles'),
+          child: Container(
+            width: double.infinity,
+            height: 135,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1B8045), Color(0xFF0F5A2E)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1B8045).withValues(alpha: 0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+            child: Stack(
+              children: [
+                // Decorative circle accents
+                Positioned(
+                  right: -25,
+                  top: -25,
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 35,
+                  bottom: -35,
+                  child: Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
+                ),
+                // Content
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22C55E),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'PROMO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Gadai Cepat, Bunga Ringan 0.5%!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Taksiran tertinggi & proses hanya 15 menit langsung cair.',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -456,50 +710,63 @@ class _DashboardBodyState extends State<DashboardBody> {
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/financial-tools'),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1A237E).withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
+                color: const Color(0xFFEFF6FF), // Soft blue tint
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 28),
+              child: const Icon(
+                Icons.auto_graph_rounded,
+                color: Color(0xFF2563EB),
+                size: 22,
+              ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Tool Keuangan',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
+                children: const [
                   Text(
-                    '9 kalkulator untuk investasi, bisnis & kredit',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+                    '9 Tool & Kalkulator Finansial',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Hitung simulasi FIRE, dana darurat, & BEP usaha',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withValues(alpha: 0.7), size: 18),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textMuted,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -508,44 +775,45 @@ class _DashboardBodyState extends State<DashboardBody> {
 
   Widget _buildProfileAlert(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.1),
+        color: const Color(0xFFFFFBEB), // Soft amber
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+        border: Border.all(color: const Color(0xFFFDE68A)),
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.2),
+              color: const Color(0xFFFEF3C7),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
-              Icons.warning_rounded,
-              color: AppColors.warning,
-              size: 22,
+              Icons.person_pin_outlined,
+              color: Color(0xFFD97706),
+              size: 20,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
+              children: const [
+                Text(
                   'Lengkapi Profil Anda',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
+                    fontSize: 13,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
-                  'Lengkapi data untuk mengajukan gadai',
+                  'Lengkapi data untuk kemudahan gadai online',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -555,16 +823,18 @@ class _DashboardBodyState extends State<DashboardBody> {
           TextButton(
             onPressed: () => Navigator.pushNamed(context, '/complete-profile'),
             style: TextButton.styleFrom(
-              backgroundColor: AppColors.warning,
+              backgroundColor: const Color(0xFFF59E0B),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text(
               'Lengkapi',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -572,42 +842,68 @@ class _DashboardBodyState extends State<DashboardBody> {
     );
   }
 
-  Widget _buildAlertBanner(BuildContext context, DashboardAlert alert) {
-    Color color;
-    IconData icon;
-
-    switch (alert.type) {
-      case 'warning':
-        color = AppColors.warning;
-        icon = Icons.warning_amber_rounded;
-        break;
-      case 'error':
-        color = AppColors.error;
-        icon = Icons.error_outline;
-        break;
-      default:
-        color = AppColors.info;
-        icon = Icons.info_outline;
-    }
-
+  Widget _buildOverdueAlertBanner(BuildContext context, int overdueCount) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFCA5A5)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 20),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEE2E2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFFDC2626),
+              size: 20,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              alert.message,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textPrimary,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$overdueCount Transaksi Jatuh Tempo!',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Color(0xFFDC2626),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Harap segera tebus atau perpanjang masa gadai Anda.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/transactions'),
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
+            ),
+            child: const Text(
+              'Lihat',
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -615,62 +911,245 @@ class _DashboardBodyState extends State<DashboardBody> {
     );
   }
 
-  Widget _buildSectionHeader(
-    BuildContext context,
-    String title,
-    VoidCallback onViewAll,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildActiveTransactionsSection(BuildContext context, DashboardData data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        GestureDetector(
-          onTap: onViewAll,
-          child: Row(
-            children: [
-              Text(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Transaksi Gadai Anda',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/transactions'),
+              child: const Text(
                 'Lihat Semua',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
                   color: AppColors.primary,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 12,
-                color: AppColors.primary,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+        const SizedBox(height: 12),
+        if (data.activeTransactions.isNotEmpty) ...[
+          ...data.activeTransactions
+              .take(3)
+              .map((tx) => _buildTransactionCard(context, tx)),
+        ] else ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.inventory_2_outlined, color: Colors.grey.shade400, size: 40),
+                const SizedBox(height: 8),
+                const Text(
+                  'Belum ada transaksi gadai aktif',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13.5,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Ajukan gadai barang Anda dengan taksiran terbaik.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTransactionCard(BuildContext context, ActiveTransaction transaction) {
+    final bool isOverdue = transaction.isOverdue;
+    final iconData = _getCategoryIcon(transaction.collateralName);
+
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/transactions/${transaction.code}'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isOverdue ? const Color(0xFFFCA5A5) : const Color(0xFFE2E8F0),
+            width: isOverdue ? 1.2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: isOverdue
+                    ? const Color(0xFFFEE2E2)
+                    : const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                iconData,
+                color: isOverdue ? AppColors.error : AppColors.primary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.collateralName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Text(
+                        transaction.code,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '•',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        transaction.loanAmountFormatted.isNotEmpty
+                            ? transaction.loanAmountFormatted
+                            : Formatters.formatCurrency(transaction.loanAmount),
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isOverdue
+                    ? const Color(0xFFFEE2E2)
+                    : const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                isOverdue
+                    ? 'Jatuh Tempo'
+                    : (transaction.daysUntilDue != null
+                        ? '${transaction.daysUntilDue} hari lagi'
+                        : 'Aktif'),
+                style: TextStyle(
+                  color: isOverdue ? const Color(0xFFDC2626) : const Color(0xFF15803D),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentRequestsSection(BuildContext context, DashboardData data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Pengajuan Gadai',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/pawn-requests'),
+              child: const Text(
+                'Lihat Semua',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...data.recentRequests
+            .take(3)
+            .map((req) => _buildRequestCard(context, req)),
       ],
     );
   }
 
   Widget _buildRequestCard(BuildContext context, RecentRequest request) {
     final statusInfo = _getStatusInfo(request.status);
-    
+    final iconData = _getCategoryIcon(request.collateralName);
+
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/pawn-requests/${request.code}'),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
@@ -678,15 +1157,16 @@ class _DashboardBodyState extends State<DashboardBody> {
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                color: statusInfo.color.withValues(alpha: 0.1),
+                color: statusInfo.color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                statusInfo.icon,
+                iconData,
                 color: statusInfo.color,
+                size: 22,
               ),
             ),
             const SizedBox(width: 12),
@@ -694,180 +1174,42 @@ class _DashboardBodyState extends State<DashboardBody> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    request.code,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
                   Text(
                     request.collateralName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
+                      fontSize: 14,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
-                    request.loanAmountFormatted.isNotEmpty 
-                        ? request.loanAmountFormatted 
-                        : Formatters.formatCurrency(request.loanAmount),
-                    style: TextStyle(
-                      fontSize: 13,
+                    '${request.code} • ${request.loanAmountFormatted.isNotEmpty ? request.loanAmountFormatted : Formatters.formatCurrency(request.loanAmount)}',
+                    style: const TextStyle(
+                      fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.textMuted,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  ({IconData icon, Color color}) _getStatusInfo(String status) {
-    final statusLower = status.toLowerCase();
-    
-    switch (statusLower) {
-      case 'pending':
-      case 'menunggu':
-        return (icon: Icons.hourglass_empty, color: Colors.amber);
-      case 'under_review':
-      case 'reviewing':
-      case 'direview':
-        return (icon: Icons.rate_review, color: Colors.orange);
-      case 'approved':
-      case 'disetujui':
-        return (icon: Icons.check_circle, color: AppColors.success);
-      case 'rejected':
-      case 'ditolak':
-        return (icon: Icons.cancel, color: Colors.red);
-      case 'cancelled':
-        return (icon: Icons.cancel, color: Colors.grey);
-      case 'converted':
-      case 'dikonversi':
-        return (icon: Icons.swap_horiz, color: Colors.blue);
-      default:
-        return (icon: Icons.pending_actions, color: AppColors.primary);
-    }
-  }
-
-  Widget _buildTransactionCard(BuildContext context, ActiveTransaction transaction) {
-    final bool isOverdue = transaction.isOverdue;
-
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/transactions/${transaction.code}'),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: isOverdue
-              ? Border.all(color: AppColors.error.withValues(alpha: 0.3))
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
+            const SizedBox(width: 8),
             Container(
-              width: 48,
-              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: isOverdue
-                    ? AppColors.error.withValues(alpha: 0.1)
-                    : AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: statusInfo.color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(
-                Icons.receipt_long,
-                color: isOverdue ? AppColors.error : AppColors.success,
+              child: Text(
+                _getStatusLabel(request.status),
+                style: TextStyle(
+                  color: statusInfo.color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        transaction.code,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      if (isOverdue)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'JATUH TEMPO',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        )
-                      else if (transaction.daysUntilDue != null)
-                        Text(
-                          '${transaction.daysUntilDue} hari lagi',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: transaction.daysUntilDue! <= 7
-                                ? AppColors.warning
-                                : AppColors.textMuted,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    transaction.collateralName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    transaction.loanAmountFormatted.isNotEmpty 
-                        ? transaction.loanAmountFormatted 
-                        : Formatters.formatCurrency(transaction.loanAmount),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.textMuted,
             ),
           ],
         ),
@@ -880,11 +1222,31 @@ class _DashboardBodyState extends State<DashboardBody> {
       builder: (context, state) {
         if (state is ArticleLatestLoaded && state.articles.isNotEmpty) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader(
-                context,
-                'Berita Terbaru',
-                () => Navigator.pushNamed(context, '/articles'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Edukasi & Berita',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/articles'),
+                    child: const Text(
+                      'Lihat Semua',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               ...state.articles.map((article) => _buildNewsCard(context, article)),
@@ -904,10 +1266,11 @@ class _DashboardBodyState extends State<DashboardBody> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
@@ -920,20 +1283,20 @@ class _DashboardBodyState extends State<DashboardBody> {
                 bottomLeft: Radius.circular(16),
               ),
               child: SizedBox(
-                width: 100,
-                height: 90,
+                width: 95,
+                height: 85,
                 child: article.featuredImageThumb != null
                     ? Image.network(
                         article.featuredImageThumb!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
-                          color: AppColors.background,
-                          child: Icon(Icons.article_outlined, color: AppColors.textMuted, size: 28),
+                          color: const Color(0xFFF1F5F9),
+                          child: const Icon(Icons.article_outlined, color: AppColors.textMuted, size: 26),
                         ),
                       )
                     : Container(
-                        color: AppColors.background,
-                        child: Icon(Icons.article_outlined, color: AppColors.textMuted, size: 28),
+                        color: const Color(0xFFF1F5F9),
+                        child: const Icon(Icons.article_outlined, color: AppColors.textMuted, size: 26),
                       ),
               ),
             ),
@@ -947,12 +1310,12 @@ class _DashboardBodyState extends State<DashboardBody> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color: const Color(0xFFF0FDF4),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           article.category!,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary,
@@ -975,7 +1338,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                     if (article.publishedAt != null)
                       Text(
                         DateFormat('dd MMM yyyy').format(article.publishedAt!),
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.textMuted,
                         ),
@@ -990,11 +1353,300 @@ class _DashboardBodyState extends State<DashboardBody> {
     );
   }
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) return 'Pagi';
-    if (hour < 15) return 'Siang';
-    if (hour < 18) return 'Sore';
-    return 'Malam';
+  IconData _getCategoryIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('emas') || lower.contains('gold') || lower.contains('kalung') || lower.contains('cincin')) {
+      return Icons.monetization_on_outlined;
+    }
+    if (lower.contains('hp') || lower.contains('phone') || lower.contains('iphone') || lower.contains('samsung') || lower.contains('ipad')) {
+      return Icons.smartphone_rounded;
+    }
+    if (lower.contains('laptop') || lower.contains('rog') || lower.contains('macbook')) {
+      return Icons.laptop_mac_rounded;
+    }
+    if (lower.contains('kamera') || lower.contains('sony') || lower.contains('canon')) {
+      return Icons.camera_alt_outlined;
+    }
+    if (lower.contains('motor') || lower.contains('honda') || lower.contains('yamaha')) {
+      return Icons.two_wheeler_rounded;
+    }
+    return Icons.devices_other_rounded;
+  }
+
+  ({IconData icon, Color color}) _getStatusInfo(String status) {
+    final statusLower = status.toLowerCase();
+    
+    switch (statusLower) {
+      case 'pending':
+      case 'menunggu':
+        return (icon: Icons.hourglass_empty, color: Colors.amber.shade700);
+      case 'under_review':
+      case 'reviewing':
+      case 'direview':
+        return (icon: Icons.rate_review_outlined, color: Colors.orange.shade700);
+      case 'approved':
+      case 'disetujui':
+        return (icon: Icons.check_circle_outline, color: AppColors.success);
+      case 'rejected':
+      case 'ditolak':
+        return (icon: Icons.cancel_outlined, color: Colors.red);
+      case 'cancelled':
+      case 'dibatalkan':
+        return (icon: Icons.cancel_outlined, color: Colors.grey);
+      case 'converted':
+      case 'dikonversi':
+        return (icon: Icons.swap_horiz_rounded, color: Colors.blue);
+      default:
+        return (icon: Icons.pending_actions_rounded, color: AppColors.primary);
+    }
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+        return 'Menunggu';
+      case 'REVIEWING':
+      case 'UNDER_REVIEW':
+        return 'Direview';
+      case 'APPROVED':
+        return 'Disetujui';
+      case 'REJECTED':
+        return 'Ditolak';
+      case 'CANCELLED':
+        return 'Dibatalkan';
+      case 'CONVERTED':
+        return 'Dikonversi';
+      default:
+        return status;
+    }
+  }
+
+  void _showNotifications(BuildContext context, DashboardData data) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Notifikasi & Peringatan',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  if (data.stats.overdueTransactions > 0)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.error.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.warning_amber_rounded,
+                              color: AppColors.error, size: 22),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Peringatan Jatuh Tempo',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.error),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Anda memiliki ${data.stats.overdueTransactions} transaksi yang telah lewat jatuh tempo. Harap segera perpanjang atau tebus agunan Anda.',
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (!data.customer.isProfileComplete)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.warning.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.person_outline,
+                              color: AppColors.warning, size: 22),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Profil Belum Lengkap',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Lengkapi data profil Anda untuk kemudahan pengajuan gadai online.',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary),
+                                ),
+                                const SizedBox(height: 8),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.pop(ctx);
+                                    Navigator.pushNamed(
+                                        context, '/complete-profile');
+                                  },
+                                  child: const Text(
+                                    'Lengkapi Sekarang →',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ...data.alerts.map((alert) => Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              alert.type == 'warning'
+                                   ? Icons.warning_amber_rounded
+                                  : alert.type == 'success'
+                                      ? Icons.check_circle_outline
+                                      : Icons.info_outline,
+                              color: alert.type == 'warning'
+                                  ? AppColors.warning
+                                  : alert.type == 'success'
+                                      ? AppColors.success
+                                      : AppColors.info,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                alert.message,
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textPrimary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                  if (data.alerts.isEmpty &&
+                      data.stats.overdueTransactions == 0 &&
+                      data.customer.isProfileComplete)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        child: Column(
+                          children: [
+                            Icon(Icons.notifications_none,
+                                size: 56, color: Colors.grey.shade400),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Belum ada notifikasi baru',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Semua transaksi dan pengajuan Anda dalam kondisi baik.',
+                              style: TextStyle(
+                                  fontSize: 12, color: AppColors.textMuted),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

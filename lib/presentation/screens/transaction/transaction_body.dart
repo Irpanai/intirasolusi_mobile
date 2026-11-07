@@ -5,8 +5,6 @@ import '../../../config/theme/app_colors.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/filter_tabs.dart';
-import '../../../core/widgets/empty_state.dart';
-import '../../../core/widgets/status_badge.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/transaction_model.dart';
 
@@ -53,7 +51,7 @@ class _TransactionBodyState extends State<TransactionBody> {
 
         // Filter Tabs
         Container(
-          color: Colors.white,
+          color: AppColors.background,
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: FilterTabs(
             tabs: _filters,
@@ -62,7 +60,7 @@ class _TransactionBodyState extends State<TransactionBody> {
           ),
         ),
 
-        // Content
+        // Content List
         Expanded(
           child: BlocBuilder<TransactionBloc, TransactionState>(
             builder: (context, state) {
@@ -79,28 +77,47 @@ class _TransactionBodyState extends State<TransactionBody> {
 
               if (state is TransactionListLoaded) {
                 if (state.transactions.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.receipt_long_outlined,
-                    title: 'Belum Ada Transaksi',
-                    subtitle: 'Transaksi Anda akan muncul di sini',
-                  );
+                  return _buildEmptyState();
                 }
 
                 return RefreshIndicator(
                   onRefresh: () async {
                     context.read<TransactionBloc>().add(TransactionRefresh());
                   },
+                  color: AppColors.primary,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
                     children: [
-                      // Summary Cards
-                      _buildSummaryCards(state.transactions),
+                      // Summary Card (Screen 3 Reference Style)
+                      _buildPortfolioSummaryCard(state.transactions),
                       const SizedBox(height: 16),
 
-                      // Transaction List
+                      // Section Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Daftar Transaksi Gadai',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            '${state.transactions.length} Total',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Transaction Cards
                       ...state.transactions.map((tx) => _buildTransactionCard(tx)),
-                      
-                      const SizedBox(height: 80), // Space for bottom nav
                     ],
                   ),
                 );
@@ -117,259 +134,401 @@ class _TransactionBodyState extends State<TransactionBody> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, bottom: 20, left: 20, right: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF14532D), // Deep green 900
+            Color(0xFF15803D), // Emerald 700
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
         bottom: false,
-        child: Row(
-          children: [
-            const Text(
-              'Transaksi Saya',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Portofolio Gadai',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.tune_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'Monitoring status dan rincian transaksi gadai Anda.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildSummaryCards(List<TransactionModel> transactions) {
-    final activeCount = transactions.where((t) => t.status == 'active').length;
+  Widget _buildPortfolioSummaryCard(List<TransactionModel> transactions) {
+    final activeCount = transactions.where((t) => t.status.toLowerCase() == 'active').length;
+    final overdueCount = transactions.where((t) => t.isOverdue).length;
     final totalLoan = transactions
-        .where((t) => t.status == 'active')
+        .where((t) => t.status.toLowerCase() == 'active' || t.status.toLowerCase() == 'overdue')
         .fold<double>(0, (sum, t) => sum + t.loanAmount);
 
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF0D5428), // Deep forest
+            Color(0xFF146834), // Rich emerald
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.16),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'TOTAL TRANSAKSI AKTIF',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.receipt_long, color: AppColors.primary),
-                const SizedBox(height: 8),
-                Text(
-                  'Transaksi Aktif',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '$activeCount',
+                child: Text(
+                  '$activeCount Transaksi',
                   style: const TextStyle(
-                    fontSize: 24,
+                    color: Colors.white,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Total Modal Pinjaman
+          Text(
+            'Total Modal Gadai (Terkunci)',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 11,
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+          const SizedBox(height: 4),
+          Text(
+            Formatters.formatCurrency(totalLoan),
+            style: const TextStyle(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.account_balance_wallet, color: AppColors.success),
-                const SizedBox(height: 8),
-                Text(
-                  'Total Pinjaman',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  Formatters.formatCurrency(totalLoan),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
+              fontSize: 25,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 14),
+
+          // Bottom Info Pill
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: overdueCount > 0
+                      ? const Color(0xFFEF4444).withValues(alpha: 0.85)
+                      : Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      overdueCount > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+                      color: Colors.white,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      overdueCount > 0
+                          ? '$overdueCount Jatuh Tempo'
+                          : 'Semua Status Lancar',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  Icon(
+                    Icons.security_rounded,
+                    color: Colors.white.withValues(alpha: 0.75),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Agunan Tersimpan Aman',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildTransactionCard(TransactionModel transaction) {
     final bool isOverdue = transaction.isOverdue;
+    final iconData = _getCategoryIcon(transaction.collateralName);
 
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/transactions/${transaction.transactionCode}'),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: isOverdue
-              ? Border.all(color: AppColors.error.withValues(alpha: 0.3))
-              : null,
+          border: Border.all(
+            color: isOverdue ? const Color(0xFFFCA5A5) : const Color(0xFFE2E8F0),
+            width: isOverdue ? 1.2 : 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: isOverdue ? const Color(0xFFFEE2E2) : const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                iconData,
+                color: isOverdue ? AppColors.error : AppColors.primary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    transaction.transactionCode,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
+                    transaction.collateralName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  StatusBadge.fromString(transaction.status),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Collateral Name
-              Text(
-                transaction.collateralName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              if (transaction.productName != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  transaction.productName!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-
-              // Amount and Due Date
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 3),
+                  Row(
                     children: [
                       Text(
-                        'Pinjaman',
-                        style: TextStyle(
+                        transaction.transactionCode,
+                        style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.textMuted,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(width: 6),
+                      Text(
+                        '•',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
                       Text(
                         transaction.loanAmountFormatted ?? Formatters.formatCurrency(transaction.loanAmount),
                         style: const TextStyle(
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.primary,
                         ),
                       ),
                     ],
                   ),
-                  if (transaction.dueDate != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Jatuh Tempo',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          transaction.dueDateFormatted ?? transaction.dueDate ?? '-',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: isOverdue ? AppColors.error : AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
                 ],
               ),
-
-              // Branch info
-              if (transaction.branchName != null) ...[
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 14,
-                      color: AppColors.textMuted,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      transaction.branchName!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isOverdue
+                    ? const Color(0xFFFEE2E2)
+                    : (transaction.status.toLowerCase() == 'completed'
+                        ? const Color(0xFFF1F5F9)
+                        : const Color(0xFFDCFCE7)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                isOverdue
+                    ? 'Jatuh Tempo'
+                    : (transaction.status.toLowerCase() == 'completed'
+                        ? 'Lunas'
+                        : (transaction.dueDateFormatted != null
+                            ? transaction.dueDateFormatted!
+                            : 'Aktif')),
+                style: TextStyle(
+                  color: isOverdue
+                      ? const Color(0xFFDC2626)
+                      : (transaction.status.toLowerCase() == 'completed'
+                          ? AppColors.textMuted
+                          : const Color(0xFF15803D)),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFDCFCE7)),
+              ),
+              child: const Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 38,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Belum Ada Transaksi Gadai',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Anda belum memiliki transaksi gadai pada filter ini.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getCategoryIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('emas') || lower.contains('gold') || lower.contains('kalung') || lower.contains('cincin')) {
+      return Icons.monetization_on_outlined;
+    }
+    if (lower.contains('hp') || lower.contains('phone') || lower.contains('iphone') || lower.contains('samsung') || lower.contains('ipad')) {
+      return Icons.smartphone_rounded;
+    }
+    if (lower.contains('laptop') || lower.contains('rog') || lower.contains('macbook')) {
+      return Icons.laptop_mac_rounded;
+    }
+    if (lower.contains('kamera') || lower.contains('sony') || lower.contains('canon')) {
+      return Icons.camera_alt_outlined;
+    }
+    if (lower.contains('motor') || lower.contains('honda') || lower.contains('yamaha')) {
+      return Icons.two_wheeler_rounded;
+    }
+    return Icons.devices_other_rounded;
   }
 }

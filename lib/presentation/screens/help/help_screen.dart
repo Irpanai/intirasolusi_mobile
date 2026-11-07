@@ -26,12 +26,19 @@ class HelpScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, bottom: 48, left: 20, right: 20),
+      padding: const EdgeInsets.only(top: 14, bottom: 44, left: 20, right: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF14532D), // Deep green 900
+            Color(0xFF15803D), // Emerald 700
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
@@ -42,41 +49,54 @@ class HelpScreen extends StatelessWidget {
             // Back button
             GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    size: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    width: 1,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Kembali',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 14,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Text(
+                      'Kembali',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
 
             // Title
             const Text(
-              'Pusat Bantuan',
+              'Pusat Bantuan & FAQ',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
-              'Temukan jawaban untuk pertanyan Anda',
+              'Temukan panduan, kontak CS, dan jawaban seputar gadai Intira',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 12.5,
               ),
             ),
           ],

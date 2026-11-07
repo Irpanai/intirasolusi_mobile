@@ -69,15 +69,12 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Berita'),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0.5,
-      ),
       body: Column(
         children: [
-          _buildSearchAndFilter(),
+          // Unified Curved Green Header
+          _buildHeader(),
+
+          // Content
           Expanded(
             child: BlocBuilder<ArticleBloc, ArticleState>(
               builder: (context, state) {
@@ -121,10 +118,11 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
                         category: _selectedCategory,
                       ));
                     },
+                    color: AppColors.primary,
                     child: ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.all(16),
-                      itemCount: state.articles.length + (state.isLoadingMore ? 1 : 0),
+                      itemCount: state.articles.length + (state.hasMore ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == state.articles.length) {
                           return const Padding(
@@ -147,54 +145,131 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
     );
   }
 
-  Widget _buildSearchAndFilter() {
+  Widget _buildHeader() {
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: Column(
-        children: [
-          // Search
-          TextField(
-            controller: _searchController,
-            onSubmitted: _onSearch,
-            decoration: InputDecoration(
-              hintText: 'Cari berita...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                        _onSearch('');
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: AppColors.background,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF14532D), // Deep green 900
+            Color(0xFF15803D), // Emerald 700
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Back button + title
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Edukasi & Berita',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Tips finansial, investasi emas & informasi gadai',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 14),
+
+              // Search Input
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onSubmitted: _onSearch,
+                  style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: 'Cari artikel investasi atau tips...',
+                    hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                    prefixIcon: Icon(Icons.search_rounded, size: 20, color: Colors.grey.shade500),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearch('');
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Category filter chips
+              SizedBox(
+                height: 32,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _buildFilterChip('Semua', null),
+                    const SizedBox(width: 8),
+                    ..._categories.map((cat) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _buildFilterChip(cat, cat),
+                    )),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          // Category filter chips
-          SizedBox(
-            height: 36,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildFilterChip('Semua', null),
-                const SizedBox(width: 8),
-                ..._categories.map((cat) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _buildFilterChip(cat, cat),
-                )),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -204,20 +279,20 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
     return GestureDetector(
       onTap: () => _onCategorySelected(category),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
+          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.18),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.textMuted.withValues(alpha: 0.3),
+            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.25),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? AppColors.primary : Colors.white,
           ),
         ),
       ),
@@ -232,10 +307,11 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
@@ -249,8 +325,8 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
                 bottomLeft: Radius.circular(16),
               ),
               child: SizedBox(
-                width: 110,
-                height: 100,
+                width: 100,
+                height: 90,
                 child: article.featuredImageThumb != null
                     ? Image.network(
                         article.featuredImageThumb!,
@@ -271,12 +347,12 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color: const Color(0xFFF0FDF4),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           article.category!,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary,
@@ -290,7 +366,7 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
@@ -300,7 +376,7 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
                       article.publishedAt != null
                           ? DateFormat('dd MMM yyyy').format(article.publishedAt!)
                           : '',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textMuted,
                       ),
@@ -317,8 +393,8 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
 
   Widget _buildPlaceholder() {
     return Container(
-      color: AppColors.background,
-      child: Icon(Icons.article_outlined, color: AppColors.textMuted, size: 32),
+      color: const Color(0xFFF1F5F9),
+      child: const Icon(Icons.article_outlined, color: AppColors.textMuted, size: 28),
     );
   }
 }

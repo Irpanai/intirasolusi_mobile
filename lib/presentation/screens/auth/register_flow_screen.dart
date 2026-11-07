@@ -7,6 +7,7 @@ import 'package:image_cropper/image_cropper.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/ktp_ocr_service.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_input_styles.dart';
 import '../../../core/utils/validators.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import 'widgets/selfie_capture_widget.dart';
@@ -180,7 +181,7 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
         builder: (ctx) => Scaffold(
           appBar: AppBar(
             title: const Text('Foto Selfie'),
-            backgroundColor: AppColors.primary,
+            backgroundColor: const Color(0xFF14532D),
             foregroundColor: Colors.white,
           ),
           body: SelfieCaptureWidget(
@@ -303,46 +304,89 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
   // ─────────────────────────────────────────────────────────────── Header ────
   Widget _buildHeader() {
     const titles = ['Buat Akun', 'Foto KTP', 'Foto Selfie', 'Konfirmasi Data'];
+    const subtitles = [
+      'Lengkapi data dasar akun Anda',
+      'Pindai e-KTP untuk identifikasi',
+      'Ambil foto selfie untuk verifikasi',
+      'Periksa kembali kelengkapan data',
+    ];
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, bottom: 20, left: 20, right: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF14532D), // Pine green
+            Color(0xFF15803D), // Emerald green
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
         bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: _previousStep,
-              child: Row(
-                children: [
-                  Icon(Icons.arrow_back,
-                      color: Colors.white.withValues(alpha: 0.8), size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    _currentStep == 0 ? 'Kembali' : 'Sebelumnya',
-                    style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: _previousStep,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      width: 1,
+                    ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 13,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _currentStep == 0 ? 'Kembali' : 'Sebelumnya',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              titles[_currentStep],
-              style: const TextStyle(
+              const SizedBox(height: 14),
+              Text(
+                titles[_currentStep],
+                style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold),
-            ),
-          ],
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitles[_currentStep],
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1057,9 +1101,12 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
               keyboard: TextInputType.number,
               formatters: [FilteringTextInputFormatter.digitsOnly],
               validator: (v) {
-                if (v == null || v.isEmpty) return 'NIK wajib diisi';
-                if (v.length < 15 || v.length > 16)
+                if (v == null || v.isEmpty) {
+                  return 'NIK wajib diisi';
+                }
+                if (v.length < 15 || v.length > 16) {
                   return 'NIK harus 15–16 digit';
+                }
                 return null;
               },
             ),
@@ -1200,20 +1247,16 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary)),
+        AppInputStyles.formLabel(label, required: true),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           keyboardType: keyboard,
           obscureText: obscure,
           validator: validator,
-          decoration: InputDecoration(
+          decoration: AppInputStyles.inputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon),
+            prefixIcon: Icon(icon, size: 20, color: const Color(0xFF64748B)),
             suffixIcon: suffix,
           ),
         ),
@@ -1234,29 +1277,20 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary)),
+        AppInputStyles.formLabel(label, required: true),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           keyboardType: keyboard,
           inputFormatters: formatters,
           validator: validator,
-          decoration: InputDecoration(
+          decoration: AppInputStyles.inputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon),
+            prefixIcon: Icon(icon, size: 20, color: const Color(0xFF64748B)),
             suffixIcon: suffix,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                  color: AppColors.primary.withValues(alpha: 0.4), width: 1.5),
-            ),
+          ).copyWith(
             helperText: '✏️ Koreksi jika hasil OCR tidak tepat',
-            helperStyle:
-                const TextStyle(fontSize: 11, color: AppColors.warning),
+            helperStyle: const TextStyle(fontSize: 11, color: Color(0xFFD97706)),
           ),
         ),
       ],

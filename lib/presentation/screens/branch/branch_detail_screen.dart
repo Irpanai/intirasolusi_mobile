@@ -47,26 +47,52 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
     }
   }
 
-  // ignore: unused_element
   void _openMaps() async {
-    if (_branch?.latitude == null || _branch?.longitude == null) return;
-
-    final url = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${_branch!.latitude},${_branch!.longitude}',
-    );
+    Uri url;
+    final address = _branch?.address;
+    if (_branch?.latitude != null && _branch?.longitude != null) {
+      url = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${_branch!.latitude},${_branch!.longitude}',
+      );
+    } else if (address != null && address.isNotEmpty) {
+      final query = Uri.encodeComponent('${_branch!.name}, $address');
+      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lokasi peta belum tersedia untuk cabang ini')),
+      );
+      return;
+    }
 
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka aplikasi peta')),
+        );
+      }
     }
   }
 
-  // ignore: unused_element
   void _callPhone() async {
-    if (_branch?.phone == null) return;
+    if (_branch?.phone == null || _branch!.phone!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nomor telepon cabang belum tersedia')),
+      );
+      return;
+    }
 
-    final url = Uri.parse('tel:${_branch!.phone}');
+    final cleanPhone = _branch!.phone!.replaceAll(RegExp(r'[^0-9+]'), '');
+    final url = Uri.parse('tel:$cleanPhone');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Tidak dapat melakukan panggilan ke ${_branch!.phone}')),
+        );
+      }
     }
   }
 
@@ -126,12 +152,19 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, bottom: 48, left: 20, right: 20),
+      padding: const EdgeInsets.only(top: 14, bottom: 44, left: 20, right: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF14532D), // Deep green 900
+            Color(0xFF15803D), // Emerald 700
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
@@ -142,25 +175,38 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
             // Back button
             GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    size: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    width: 1,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Kembali',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 14,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Text(
+                      'Kembali',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
 
             // Branch name and status
             Row(
@@ -173,7 +219,7 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
                         _branch?.name ?? '',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -181,8 +227,8 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
                       Text(
                         _branch?.code ?? '',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12.5,
                         ),
                       ),
                     ],
@@ -195,17 +241,33 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: (_branch?.isActive ?? false)
-                        ? AppColors.success.withValues(alpha: 0.2)
-                        : AppColors.error.withValues(alpha: 0.2),
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.red.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    (_branch?.isActive ?? false) ? 'Buka' : 'Tutup',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: (_branch?.isActive ?? false)
+                              ? const Color(0xFF4ADE80)
+                              : Colors.red,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        (_branch?.isActive ?? false) ? 'Buka' : 'Tutup',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -270,12 +332,12 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
                     ),
                   ),
 
-                // Phone - temporarily disabled
+                // Phone
                 _buildInfoRow(
                   icon: Icons.phone_outlined,
                   label: 'Telepon',
                   value: _branch?.phone ?? '-',
-                  // onTap: _branch?.phone != null ? _callPhone : null, // TODO: Enable when phone feature is ready
+                  onTap: _branch?.phone != null ? _callPhone : null,
                 ),
                 const SizedBox(height: 12),
 
@@ -309,23 +371,23 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                // Call Button - temporarily disabled
+                // Call Button
                 Expanded(
                   child: _buildActionButton(
                     icon: Icons.phone,
                     label: 'Telepon',
-                    // onTap: _branch?.phone != null ? _callPhone : null, // TODO: Enable when phone feature is ready
+                    onTap: _branch?.phone != null ? _callPhone : null,
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Maps Button - temporarily disabled
+                // Maps Button
                 Expanded(
                   child: _buildActionButton(
                     icon: Icons.map,
-                    label: 'Peta',
-                    // onTap: (_branch?.latitude != null && _branch?.longitude != null)
-                    //     ? _openMaps
-                    //     : null, // TODO: Enable when maps feature is ready
+                    label: 'Petunjuk Arah',
+                    onTap: (_branch?.latitude != null || (_branch?.address?.isNotEmpty == true))
+                        ? _openMaps
+                        : null,
                     isPrimary: true,
                   ),
                 ),

@@ -31,3 +31,11 @@
 -dontwarn com.google.android.play.core.tasks.OnFailureListener
 -dontwarn com.google.android.play.core.tasks.OnSuccessListener
 -dontwarn com.google.android.play.core.tasks.Task
+
+# uCrop (image_cropper)
+-keep class com.yalantis.ucrop.** { *; }
+-dontwarn com.yalantis.ucrop.**
+
+# TensorFlow Lite (ktp_extractor / ML models)
+-keep class org.tensorflow.** { *; }
+-dontwarn org.tensorflow.**

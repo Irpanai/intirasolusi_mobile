@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/repositories/dashboard_repository.dart';
+import '../../../data/repositories/auth_repository.dart';
 
 // Events
 abstract class DashboardEvent extends Equatable {
@@ -55,7 +56,27 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     DashboardLoad event,
     Emitter<DashboardState> emit,
   ) async {
-    emit(DashboardLoading());
+    // 1. Instantly emit cached data if available (0ms delay)
+    final cached = await _repository.getCachedDashboard();
+    if (cached != null) {
+      emit(DashboardLoaded(data: cached));
+    } else if (state is! DashboardLoaded) {
+      // If no dashboard cache yet, create an instant placeholder from cached user
+      final cachedUser = await AuthRepository().getCachedUser();
+      if (cachedUser != null) {
+        emit(DashboardLoaded(
+          data: DashboardData.fromUser(
+            cachedUser.name,
+            cachedUser.customer?.code,
+            isProfileComplete: cachedUser.customer?.isProfileComplete ?? false,
+          ),
+        ));
+      } else {
+        emit(DashboardLoading());
+      }
+    }
+
+    // 2. Fetch fresh data from network in background
     await _loadDashboard(emit, forceRefresh: false);
   }
 
@@ -71,7 +92,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       final data = await _repository.getDashboard(forceRefresh: forceRefresh);
       emit(DashboardLoaded(data: data));
     } catch (e) {
-      emit(DashboardError(message: 'Gagal memuat dashboard: ${e.toString()}'));
+      if (state is! DashboardLoaded) {
+        emit(DashboardError(message: 'Gagal memuat dashboard: ${e.toString()}'));
+      }
     }
   }
 }

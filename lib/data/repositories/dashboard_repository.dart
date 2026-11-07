@@ -35,6 +35,25 @@ class DashboardData {
     );
   }
 
+  factory DashboardData.fromUser(String name, String? code, {bool isProfileComplete = false}) {
+    return DashboardData(
+      customer: CustomerInfo(
+        name: name,
+        code: code,
+        isProfileComplete: isProfileComplete,
+      ),
+      stats: DashboardStats(
+        activeTransactions: 0,
+        pendingRequests: 0,
+        totalLoan: 0,
+        overdueTransactions: 0,
+      ),
+      recentRequests: const [],
+      activeTransactions: const [],
+      alerts: const [],
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'customer': customer.toJson(),
@@ -298,6 +317,17 @@ class DashboardRepository {
   DashboardRepository({ApiClient? apiClient})
       : _apiClient = apiClient ?? ApiClient();
 
+  /// Get cached dashboard data immediately, even if expired (Stale-While-Revalidate)
+  Future<DashboardData?> getCachedDashboard() async {
+    try {
+      final cachedData = await _cacheService.getRawCache(CacheKeys.dashboard, ignoreExpiration: true);
+      if (cachedData != null) {
+        return DashboardData.fromJson(cachedData as Map<String, dynamic>);
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// Get dashboard data with caching (5 minutes)
   Future<DashboardData> getDashboard({bool forceRefresh = false}) async {
     // Clear cache if forcing refresh
@@ -361,7 +391,7 @@ class DashboardRepository {
     } catch (e) {
       // On error, try to return cached data even if expired
       try {
-        final cachedData = await _cacheService.getRawCache(CacheKeys.dashboard);
+        final cachedData = await _cacheService.getRawCache(CacheKeys.dashboard, ignoreExpiration: true);
         if (cachedData != null) {
           return DashboardData.fromJson(cachedData as Map<String, dynamic>);
         }

@@ -68,7 +68,7 @@ class CacheService {
   }
 
   /// Get raw cached data without type conversion
-  Future<dynamic> getRawCache(String key) async {
+  Future<dynamic> getRawCache(String key, {bool ignoreExpiration = false}) async {
     await init();
     
     final jsonString = _storage.getString(key);
@@ -78,7 +78,7 @@ class CacheService {
       final cacheData = jsonDecode(jsonString) as Map<String, dynamic>;
       final expiredAt = cacheData['expiredAt'] as int;
       
-      if (DateTime.now().millisecondsSinceEpoch > expiredAt) {
+      if (!ignoreExpiration && DateTime.now().millisecondsSinceEpoch > expiredAt) {
         await removeCache(key);
         return null;
       }

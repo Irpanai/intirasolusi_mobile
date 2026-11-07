@@ -71,6 +71,7 @@ dependencies:
   
   # Barcode
   barcode_widget: ^2.0.4
+  html: ^0.15.7
 
 dev_dependencies:
   flutter_test:

@@ -8,63 +8,84 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Column(
             children: [
               const Spacer(),
-              // Illustration
+              // Illustration Emblem
               Container(
-                width: double.infinity,
-                height: 300,
+                width: 140,
+                height: 140,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(24),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF14532D),
+                      Color(0xFF16A34A),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF15803D).withValues(alpha: 0.35),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.account_balance_wallet,
-                  size: 120,
-                  color: AppColors.primary,
+                child: const Center(
+                  child: Icon(
+                    Icons.account_balance_rounded,
+                    size: 68,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 36),
               
               // Title
-              Text(
+              const Text(
                 'Selamat Datang di Intira',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               
               // Description
-              Text(
-                'Solusi gadai online yang aman, cepat, dan terpercaya. Dapatkan pinjaman dengan jaminan barang berharga Anda.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+              const Text(
+                'Solusi gadai online terpercaya & terdaftar resmi. Dapatkan pinjaman cepat dengan agunan barang berharga Anda.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
               
               // Buttons
               AppButton(
-                text: 'Masuk',
+                text: 'Masuk ke Akun',
                 onPressed: () => Navigator.pushNamed(context, '/login'),
                 width: double.infinity,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               AppButton(
-                text: 'Daftar',
+                text: 'Daftar Akun Baru',
                 onPressed: () => Navigator.pushNamed(context, '/register-flow'),
                 width: double.infinity,
                 isOutlined: true,
               ),
-              const SizedBox(height: 16),
-              
+              const SizedBox(height: 12),
             ],
           ),
         ),

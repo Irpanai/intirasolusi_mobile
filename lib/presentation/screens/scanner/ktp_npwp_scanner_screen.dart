@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import '../../../config/theme/app_colors.dart';
+import '../../../core/widgets/gradient_header.dart';
 import '../../../core/services/ktp_ocr_service.dart';
 import 'ktp_konfirmasi_screen.dart';
 
@@ -60,7 +62,7 @@ class KtpNpwpScannerScreenState extends State<KtpNpwpScannerScreen> {
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop KTP — potong rapat ke tepi kartu',
-          toolbarColor: const Color(0xFF1565C0),
+          toolbarColor: const Color(0xFF14532D),
           toolbarWidgetColor: Colors.white,
           initAspectRatio: CropAspectRatioPreset.original,
           lockAspectRatio: false,
@@ -152,62 +154,68 @@ class KtpNpwpScannerScreenState extends State<KtpNpwpScannerScreen> {
     final hasResult = !_isLoading && _selectedImage != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Scan KTP'),
-        backgroundColor: const Color(0xFF1565C0),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Preview Foto KTP ──────────────────────────────────────────
-            Container(
-              height: 220,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _selectedImage != null
-                      ? const Color(0xFF1565C0)
-                      : Colors.grey[300]!,
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: _isLoading
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 14),
-                          Text(_statusMsg,
-                              style: const TextStyle(color: Color(0xFF1565C0))),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Menggunakan dual-pass OCR + auto-rotate…',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          GradientHeader(
+            showBackButton: true,
+            child: const GradientHeaderTitle(
+              title: 'Scan KTP',
+              subtitle: 'Pindai e-KTP untuk verifikasi identitas Anda',
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Preview Foto KTP ──────────────────────────────────────────
+                  Container(
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _selectedImage != null
+                            ? const Color(0xFF15803D)
+                            : Colors.grey[300]!,
+                        width: 2,
                       ),
-                    )
-                  : _selectedImage != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.file(_selectedImage!, fit: BoxFit.contain),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: _isLoading
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF15803D)),
+                                ),
+                                const SizedBox(height: 14),
+                                Text(_statusMsg,
+                                    style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Menggunakan dual-pass OCR + auto-rotate…',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          )
+                        : _selectedImage != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.file(_selectedImage!, fit: BoxFit.contain),
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.credit_card,
                                 size: 72, color: Colors.grey[400]),
@@ -229,8 +237,8 @@ class KtpNpwpScannerScreenState extends State<KtpNpwpScannerScreen> {
                     label: const Text('Kamera'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: Color(0xFF1565C0)),
-                      foregroundColor: const Color(0xFF1565C0),
+                      side: const BorderSide(color: Color(0xFF15803D)),
+                      foregroundColor: const Color(0xFF15803D),
                     ),
                     onPressed: _isLoading ? null : () => _pickImage(ImageSource.camera),
                   ),
@@ -242,8 +250,8 @@ class KtpNpwpScannerScreenState extends State<KtpNpwpScannerScreen> {
                     label: const Text('Galeri'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: Color(0xFF1565C0)),
-                      foregroundColor: const Color(0xFF1565C0),
+                      side: const BorderSide(color: Color(0xFF15803D)),
+                      foregroundColor: const Color(0xFF15803D),
                     ),
                     onPressed: _isLoading ? null : () => _pickImage(ImageSource.gallery),
                   ),
@@ -266,12 +274,12 @@ class KtpNpwpScannerScreenState extends State<KtpNpwpScannerScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 20),
+                        Icon(Icons.check_circle, color: Color(0xFF15803D), size: 20),
                         SizedBox(width: 8),
                         Text('Data terdeteksi (akan terisi otomatis):',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1565C0))),
+                                color: Color(0xFF15803D))),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -303,7 +311,7 @@ class KtpNpwpScannerScreenState extends State<KtpNpwpScannerScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1565C0),
+                  backgroundColor: const Color(0xFF15803D),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -355,18 +363,19 @@ class KtpNpwpScannerScreenState extends State<KtpNpwpScannerScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD),
+                color: const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.lightbulb_outline, color: Color(0xFF1565C0), size: 18),
+                      Icon(Icons.lightbulb_outline, color: Color(0xFF15803D), size: 18),
                       SizedBox(width: 6),
                       Text('Tips foto KTP yang baik:',
-                          style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1565C0))),
+                          style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF15803D))),
                     ],
                   ),
                   SizedBox(height: 8),
@@ -381,6 +390,9 @@ class KtpNpwpScannerScreenState extends State<KtpNpwpScannerScreen> {
           ],
         ),
       ),
+    ),
+  ],
+),
     );
   }
 
@@ -423,10 +435,10 @@ class _TipItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('• ', style: TextStyle(color: Color(0xFF1565C0))),
+          const Text('• ', style: TextStyle(color: Color(0xFF15803D))),
           Expanded(
             child: Text(text,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF1565C0))),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF15803D))),
           ),
         ],
       ),

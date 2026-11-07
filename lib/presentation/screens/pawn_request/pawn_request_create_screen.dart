@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/widgets/app_input_styles.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/models/branch_model.dart';
 import '../../../data/repositories/pawn_request_repository.dart';
@@ -739,12 +740,19 @@ class _PawnRequestCreateScreenState extends State<PawnRequestCreateScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 16, bottom: 40, left: 20, right: 20),
+      padding: const EdgeInsets.only(top: 14, bottom: 42, left: 20, right: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF14532D), // Deep green 900
+            Color(0xFF15803D), // Emerald 700
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
@@ -754,22 +762,35 @@ class _PawnRequestCreateScreenState extends State<PawnRequestCreateScreen> {
           children: [
             GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    size: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    width: 1,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Kembali',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 14,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Text(
+                      'Kembali',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -786,17 +807,17 @@ class _PawnRequestCreateScreenState extends State<PawnRequestCreateScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Isi form berikut untuk mengajukan gadai',
+                    'Isi formulir berikut untuk taksiran barang agunan',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 12.5,
                     ),
                   ),
                 ),
                 if (!_isCheckingLimit) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: _todaySubmissionCount >= _maxDailySubmissions
                           ? Colors.red.withValues(alpha: 0.3)
@@ -804,11 +825,11 @@ class _PawnRequestCreateScreenState extends State<PawnRequestCreateScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '${_maxDailySubmissions - _todaySubmissionCount}/$_maxDailySubmissions sisa',
+                      '${_maxDailySubmissions - _todaySubmissionCount}/$_maxDailySubmissions sisa kuota',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -823,26 +844,16 @@ class _PawnRequestCreateScreenState extends State<PawnRequestCreateScreen> {
 
   Widget _buildContent() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        decoration: AppInputStyles.cardDecoration(),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 12),
               _buildStepIndicator(),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
               if (_currentStep == 1) _buildStep1(),
               if (_currentStep == 2) _buildStep2(),
               if (_currentStep == 3) _buildStep3(),
@@ -1269,26 +1280,34 @@ class _PawnRequestCreateScreenState extends State<PawnRequestCreateScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24),
               decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
                 border: Border.all(
-                  color: Colors.grey.shade300,
-                  width: 2,
-                  style: BorderStyle.solid,
+                  color: const Color(0xFFCBD5E1),
+                  width: 1.5,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.cloud_upload_outlined,
-                    size: 36,
-                    color: Colors.grey.shade400,
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.cloud_upload_outlined,
+                      size: 32,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 10),
+                  const Text(
                     'Tap untuk upload foto',
                     style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -1674,52 +1693,11 @@ class _PawnRequestCreateScreenState extends State<PawnRequestCreateScreen> {
   }
 
   Widget _buildLabel(String text, {bool required = false}) {
-    return Row(
-      children: [
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        if (required)
-          const Text(
-            ' *',
-            style: TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-      ],
-    );
+    return AppInputStyles.formLabel(text, required: required);
   }
 
   InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey.shade400),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red),
-      ),
-    );
+    return AppInputStyles.inputDecoration(hintText: hint);
   }
 }
 

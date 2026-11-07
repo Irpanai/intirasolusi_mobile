@@ -307,7 +307,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await _apiClient.get(ApiEndpoints.profile);
 
       if (response.statusCode == 200) {
-        return UserModel.fromJson(response.data['data']);
+        final data = response.data['data'];
+        if (data is Map<String, dynamic>) {
+          return UserModel.fromJson(data);
+        }
+        throw ServerException(message: 'Format data profil tidak valid');
       } else {
         throw ServerException(
           message: 'Gagal mengambil data profil',
@@ -316,7 +320,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
     } catch (e) {
       if (e is ServerException) rethrow;
-      throw ServerException(message: 'Terjadi kesalahan saat mengambil profil');
+      throw ServerException(message: 'Terjadi kesalahan saat mengambil profil: $e');
     }
   }
 

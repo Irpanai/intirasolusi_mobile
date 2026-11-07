@@ -170,6 +170,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final hasToken = await _authRepository.hasToken();
 
       if (hasToken) {
+        // 1. Fast boot: immediately emit cached user so the app opens instantly
+        final cachedUser = await _authRepository.getCachedUser();
+        if (cachedUser != null) {
+          emit(AuthAuthenticated(
+            user: cachedUser,
+            requiresProfileCompletion: !(cachedUser.customer?.isProfileComplete ?? false),
+          ));
+        }
+
+        // 2. Validate/refresh user profile in background
         try {
           final user = await _authRepository.getCurrentUser();
           emit(AuthAuthenticated(
@@ -177,14 +187,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             requiresProfileCompletion: !(user.customer?.isProfileComplete ?? false),
           ));
         } catch (_) {
-          // If network error occurred, try fallback to cached user
-          final cachedUser = await _authRepository.getCachedUser();
-          if (cachedUser != null) {
-            emit(AuthAuthenticated(
-              user: cachedUser,
-              requiresProfileCompletion: !(cachedUser.customer?.isProfileComplete ?? false),
-            ));
-          } else {
+          if (cachedUser == null) {
             emit(AuthUnauthenticated());
           }
         }

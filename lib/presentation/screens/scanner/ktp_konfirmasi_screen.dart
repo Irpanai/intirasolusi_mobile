@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../config/theme/app_colors.dart';
+import '../../../core/widgets/gradient_header.dart';
 import '../../../core/services/ktp_ocr_service.dart';
 import 'ktp_npwp_scanner_screen.dart'; // for KtpScanResult
 
@@ -174,18 +176,22 @@ class KtpKonfirmasiScreenState extends State<KtpKonfirmasiScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Konfirmasi Data KTP'),
-        backgroundColor: const Color(0xFF1565C0),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          GradientHeader(
+            showBackButton: true,
+            child: const GradientHeaderTitle(
+              title: 'Konfirmasi Data KTP',
+              subtitle: 'Periksa & sesuaikan hasil pemindaian data Anda',
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
             // ── Preview Foto KTP ──────────────────────────────────────────
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -397,7 +403,7 @@ class KtpKonfirmasiScreenState extends State<KtpKonfirmasiScreen> {
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1565C0),
+                        backgroundColor: const Color(0xFF15803D),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -414,6 +420,9 @@ class KtpKonfirmasiScreenState extends State<KtpKonfirmasiScreen> {
           ],
         ),
       ),
+    ),
+  ],
+),
     );
   }
 
@@ -442,22 +451,38 @@ class KtpKonfirmasiScreenState extends State<KtpKonfirmasiScreen> {
         validator: validator,
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           hintText: hint,
-          prefixIcon: Icon(icon, size: 20),
+          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+          prefixIcon: Icon(icon, size: 20, color: const Color(0xFF64748B)),
           suffixIcon: suffixIcon,
           filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          fillColor: const Color(0xFFF8FAFC),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
-              color: isOcr ? Colors.orange[300]! : Colors.grey[300]!,
+              color: isOcr ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
               width: isOcr ? 1.5 : 1,
             ),
           ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(
+              color: Color(0xFF15803D),
+              width: 1.8,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFFEF4444)),
+          ),
           helperText: isOcr ? '✏️ Hasil OCR — periksa & koreksi jika perlu' : null,
-          helperStyle:
-              const TextStyle(color: Colors.orange, fontSize: 11),
+          helperStyle: const TextStyle(color: Color(0xFFD97706), fontSize: 11),
         ),
       ),
     );
@@ -477,7 +502,7 @@ class KtpKonfirmasiScreenState extends State<KtpKonfirmasiScreen> {
           final chosen = await showModalBottomSheet<String>(
             context: context,
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             builder: (_) => ListView(
               shrinkWrap: true,
@@ -493,7 +518,7 @@ class KtpKonfirmasiScreenState extends State<KtpKonfirmasiScreen> {
                   (o) => ListTile(
                     title: Text(o),
                     trailing: controller.text == o
-                        ? const Icon(Icons.check, color: Color(0xFF1565C0))
+                        ? const Icon(Icons.check, color: Color(0xFF15803D))
                         : null,
                     onTap: () => Navigator.pop(context, o),
                   ),
@@ -510,15 +535,26 @@ class KtpKonfirmasiScreenState extends State<KtpKonfirmasiScreen> {
             controller: controller,
             decoration: InputDecoration(
               labelText: label,
-              prefixIcon: Icon(icon, size: 20),
-              suffixIcon: const Icon(Icons.arrow_drop_down),
+              labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              prefixIcon: Icon(icon, size: 20, color: const Color(0xFF64748B)),
+              suffixIcon: const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
               filled: true,
-              fillColor: Colors.white,
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: Color(0xFF15803D),
+                  width: 1.8,
+                ),
               ),
             ),
           ),

@@ -324,9 +324,16 @@ class _BranchListScreenState extends State<BranchListScreen>
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF14532D), // Deep green 900
+            Color(0xFF15803D), // Emerald 700
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
@@ -335,7 +342,7 @@ class _BranchListScreenState extends State<BranchListScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -344,32 +351,56 @@ class _BranchListScreenState extends State<BranchListScreen>
                     children: [
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child: Icon(
-                          Icons.arrow_back,
-                          color: Colors.white.withValues(alpha: 0.8),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              width: 1,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        'Lokasi Cabang',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Lokasi Cabang',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Temukan kantor layanan Intira terdekat',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
                   // Search Bar
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -381,22 +412,23 @@ class _BranchListScreenState extends State<BranchListScreen>
                       cursorColor: AppColors.primary,
                       style: const TextStyle(
                         color: AppColors.textPrimary,
-                        fontSize: 15,
+                        fontSize: 14,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Cari cabang...',
+                        hintText: 'Cari nama kota, jalan, atau cabang...',
                         hintStyle: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 15,
+                          color: Colors.grey.shade400,
+                          fontSize: 13,
                         ),
                         prefixIcon: Icon(
-                          Icons.search,
+                          Icons.search_rounded,
                           color: Colors.grey.shade500,
+                          size: 20,
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 14,
+                          vertical: 12,
                         ),
                       ),
                     ),
@@ -407,25 +439,26 @@ class _BranchListScreenState extends State<BranchListScreen>
             // Tab Bar
             TabBar(
               controller: _tabController,
-              indicatorColor: Colors.white,
+              indicatorColor: const Color(0xFF4ADE80),
               indicatorWeight: 3,
               labelColor: Colors.white,
-              unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+              unselectedLabelColor: Colors.white.withValues(alpha: 0.65),
               labelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
               tabs: const [
                 Tab(
-                  icon: Icon(Icons.list, size: 20),
+                  icon: Icon(Icons.storefront_outlined, size: 18),
                   text: 'Semua Cabang',
                 ),
                 Tab(
-                  icon: Icon(Icons.near_me, size: 20),
-                  text: 'Terdekat',
+                  icon: Icon(Icons.near_me_outlined, size: 18),
+                  text: 'Cabang Terdekat',
                 ),
               ],
             ),
+            const SizedBox(height: 6),
           ],
         ),
       ),

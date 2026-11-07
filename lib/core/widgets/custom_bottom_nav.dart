@@ -25,36 +25,41 @@ class CustomBottomNav extends StatelessWidget {
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
       color: Colors.white,
-      elevation: 10,
-      shadowColor: Colors.black.withValues(alpha: 0.2),
+      elevation: 12,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      padding: EdgeInsets.zero,
       child: SizedBox(
-        height: 50,
+        height: 62,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(
               context,
               icon: Icons.home_outlined,
-              activeIcon: Icons.home,
+              activeIcon: Icons.home_rounded,
+              label: 'Beranda',
               item: NavItem.home,
             ),
             _buildNavItem(
               context,
               icon: Icons.receipt_long_outlined,
-              activeIcon: Icons.receipt_long,
+              activeIcon: Icons.receipt_long_rounded,
+              label: 'Transaksi',
               item: NavItem.transactions,
             ),
-            const SizedBox(width: 48), // Space for FAB
+            const SizedBox(width: 52), // Space for FAB
             _buildNavItem(
               context,
               icon: Icons.description_outlined,
-              activeIcon: Icons.description,
+              activeIcon: Icons.description_rounded,
+              label: 'Pengajuan',
               item: NavItem.pawnRequest,
             ),
             _buildNavItem(
               context,
-              icon: Icons.person_outline,
-              activeIcon: Icons.person,
+              icon: Icons.person_outline_rounded,
+              activeIcon: Icons.person_rounded,
+              label: 'Profil',
               item: NavItem.profile,
             ),
           ],
@@ -67,19 +72,34 @@ class CustomBottomNav extends StatelessWidget {
     BuildContext context, {
     required IconData icon,
     required IconData activeIcon,
+    required String label,
     required NavItem item,
   }) {
     final isActive = currentItem == item;
 
-    return GestureDetector(
-      onTap: () => onItemTapped(item),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Icon(
-          isActive ? activeIcon : icon,
-          color: isActive ? AppColors.primary : AppColors.textMuted,
-          size: 26,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onItemTapped(item),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              color: isActive ? const Color(0xFF15803D) : AppColors.textMuted,
+              size: 22,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                color: isActive ? const Color(0xFF15803D) : AppColors.textMuted,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -87,13 +107,42 @@ class CustomBottomNav extends StatelessWidget {
 
   /// Build FAB widget - call this separately in Scaffold's floatingActionButton
   static Widget buildFAB(BuildContext context) {
-    return FloatingActionButton(
-      onPressed: () => NavigationHelper.goToPawnRequestCreate(context),
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      elevation: 6,
-      shape: const CircleBorder(),
-      child: const Icon(Icons.add, size: 28),
+    return Container(
+      width: 54,
+      height: 54,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF14532D), // Pine green
+            Color(0xFF16A34A), // Emerald green
+          ],
+        ),
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF15803D).withValues(alpha: 0.45),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => NavigationHelper.goToPawnRequestCreate(context),
+          customBorder: const CircleBorder(),
+          child: const Center(
+            child: Icon(
+              Icons.add_rounded,
+              size: 30,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
