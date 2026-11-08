@@ -15,19 +15,11 @@ class WelcomeScreen extends StatelessWidget {
           child: Column(
             children: [
               const Spacer(),
-              // Illustration Emblem
+              // Illustration Emblem with GASPOL Logo
               Container(
                 width: 140,
                 height: 140,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF14532D),
-                      Color(0xFF16A34A),
-                    ],
-                  ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -37,19 +29,18 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.account_balance_rounded,
-                    size: 68,
-                    color: Colors.white,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: 32),
               
               // Title
               const Text(
-                'Selamat Datang di Intira',
+                'Selamat Datang di GASPOL',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -58,11 +49,22 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 4),
+              const Text(
+                'by INTIRA',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF15803D),
+                  letterSpacing: 1.2,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 12),
               
               // Description
               const Text(
-                'Solusi gadai online terpercaya & terdaftar resmi. Dapatkan pinjaman cepat dengan agunan barang berharga Anda.',
+                'Solusi gadai online terpercaya & terdaftar resmi. Dapatkan pinjaman cepat dan aman dengan agunan barang berharga Anda.',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,

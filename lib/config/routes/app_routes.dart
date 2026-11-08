@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
-import '../../presentation/screens/auth/welcome_screen.dart';
 import '../../presentation/screens/auth/login_screen.dart';
-import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/auth/register_flow_screen.dart';
 import '../../presentation/screens/main/main_nav_screen.dart';
 import '../../presentation/screens/calculator/calculator_screen.dart';
@@ -66,13 +64,13 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SplashScreen());
 
       case welcome:
-        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
 
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
 
       case register:
-        return MaterialPageRoute(builder: (_) => const RegisterScreen());
+        return MaterialPageRoute(builder: (_) => const RegisterFlowScreen());
 
       case registerFlow:
         return MaterialPageRoute(builder: (_) => const RegisterFlowScreen());

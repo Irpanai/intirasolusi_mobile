@@ -2169,7 +2169,7 @@ class AppConfig {
       case Environment.development:
         return 'http://intira.test/api';
       case Environment.staging:
-        return 'https://testing.intirasolusi.id/api';
+        return 'https://test.intirasolusi.id/api';
       case Environment.production:
         return 'https://intirasolusi.id/api';
     }

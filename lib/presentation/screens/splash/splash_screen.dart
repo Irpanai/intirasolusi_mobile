@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:video_player/video_player.dart';
 import '../../blocs/auth/auth_bloc.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -11,53 +12,92 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _minTimeElapsed = false;
+  late VideoPlayerController _videoController;
+  bool _isVideoInitialized = false;
   bool _hasNavigated = false;
-  AuthState? _pendingState;
+  AuthState? _latestAuthState;
   Timer? _fallbackTimer;
 
   @override
   void initState() {
     super.initState();
-    debugPrint('SplashScreen: initState called');
+    debugPrint('SplashScreen: initState started');
 
-    // Trigger check auth status from storage/API
+    // Trigger check auth status from storage/API in background
     context.read<AuthBloc>().add(AuthCheckStatus());
 
-    // Minimum display duration: 400ms allows the splash to appear smoothly without feeling stuck
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) {
-        setState(() => _minTimeElapsed = true);
-        if (_pendingState != null) {
-          _handleNavigation(_pendingState!);
-        }
-      }
-    });
-
-    // Fallback timer: if network hangs or no response within 5 seconds, navigate to welcome
-    _fallbackTimer = Timer(const Duration(seconds: 5), () {
-      if (mounted && !_hasNavigated) {
-        debugPrint('SplashScreen: timeout reached, fallback to welcome');
-        _navigate('/welcome');
-      }
-    });
+    // Initialize Video Player
+    _initVideo();
   }
 
-  @override
-  void dispose() {
-    _fallbackTimer?.cancel();
-    super.dispose();
+  Future<void> _initVideo() async {
+    try {
+      _videoController = VideoPlayerController.asset('assets/videos/splash.mp4');
+      await _videoController.initialize();
+      _videoController.setLooping(false);
+
+      if (mounted) {
+        setState(() {
+          _isVideoInitialized = true;
+        });
+
+        _videoController.play();
+        _videoController.addListener(_videoListener);
+
+        // Fallback timer if video stalls (duration + 1s buffer)
+        final videoDuration = _videoController.value.duration;
+        final timeoutDuration = videoDuration > Duration.zero 
+            ? videoDuration + const Duration(milliseconds: 1000)
+            : const Duration(seconds: 10);
+
+        _fallbackTimer = Timer(timeoutDuration, () {
+          if (mounted && !_hasNavigated) {
+            debugPrint('SplashScreen: timeout reached, navigating');
+            _onSplashFinished();
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('SplashScreen: video initialization error: $e');
+      if (mounted) {
+        // Direct transition if video cannot play
+        _fallbackTimer = Timer(const Duration(milliseconds: 1200), () {
+          if (mounted && !_hasNavigated) {
+            _onSplashFinished();
+          }
+        });
+      }
+    }
+  }
+
+  void _videoListener() {
+    if (!_isVideoInitialized || _hasNavigated) return;
+
+    final pos = _videoController.value.position;
+    final dur = _videoController.value.duration;
+
+    if (dur > Duration.zero && pos >= dur) {
+      debugPrint('SplashScreen: video finished playing');
+      _onSplashFinished();
+    }
+  }
+
+  void _onSplashFinished() {
+    if (_hasNavigated || !mounted) return;
+
+    final authState = _latestAuthState ?? context.read<AuthBloc>().state;
+    _handleNavigation(authState);
   }
 
   void _handleNavigation(AuthState state) {
     if (_hasNavigated || !mounted) return;
 
     if (state is AuthAuthenticated) {
-      debugPrint('SplashScreen: authenticated user found, navigating to dashboard');
+      debugPrint('SplashScreen: authenticated user found, navigate to dashboard');
       _navigate('/dashboard');
-    } else if (state is AuthUnauthenticated || state is AuthError) {
-      debugPrint('SplashScreen: unauthenticated, navigating to welcome');
-      _navigate('/welcome');
+    } else {
+      debugPrint('SplashScreen: unauthenticated, navigate directly to login');
+      _navigate('/login');
     }
   }
 
@@ -65,135 +105,92 @@ class _SplashScreenState extends State<SplashScreen> {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
     _fallbackTimer?.cancel();
+
+    if (_isVideoInitialized) {
+      _videoController.pause();
+    }
+
     Navigator.pushReplacementNamed(context, routeName);
+  }
+
+  @override
+  void dispose() {
+    _fallbackTimer?.cancel();
+    if (_isVideoInitialized) {
+      _videoController.removeListener(_videoListener);
+      _videoController.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF14532D),
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthAuthenticated ||
-              state is AuthUnauthenticated ||
-              state is AuthError) {
-            if (_minTimeElapsed) {
-              _handleNavigation(state);
-            } else {
-              _pendingState = state;
-            }
-          }
+          _latestAuthState = state;
         },
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF14532D), // Deep pine green
-                Color(0xFF15803D), // Emerald green
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
-
-                // Minimalist Emblem Logo
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      width: 4,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.account_balance_rounded,
-                      size: 46,
-                      color: Color(0xFF15803D),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Brand Name
-                const Text(
-                  'INTIRA',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 28,
-                    letterSpacing: 5,
-                  ),
-                ),
-                const SizedBox(height: 6),
-
-                // Subtitle
-                Text(
-                  'Solusi Gadai Online Aman & Terpercaya',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 36),
-
-                // Sleek Minimalist Progress Indicator
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Full-screen Video Player (Direct start, no loading bar)
+            if (_isVideoInitialized)
+              SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.cover,
                   child: SizedBox(
-                    width: 100,
-                    height: 3,
-                    child: LinearProgressIndicator(
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    width: _videoController.value.size.width,
+                    height: _videoController.value.size.height,
+                    child: VideoPlayer(_videoController),
+                  ),
+                ),
+              )
+            else
+              // Clean seamless background while video spins up (<100ms)
+              const SizedBox.expand(),
+
+            // Top-right Skip Button
+            Positioned(
+              top: 16,
+              right: 16,
+              child: SafeArea(
+                child: GestureDetector(
+                  onTap: _onSplashFinished,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          'Lewati',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 11,
+                          color: Colors.white,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-
-                const Spacer(flex: 3),
-
-                // Secure Badge Footer
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.verified_user_outlined,
-                      size: 14,
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Terdaftar & Terpercaya',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

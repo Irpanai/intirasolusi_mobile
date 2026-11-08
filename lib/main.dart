@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'config/app_config.dart';
 import 'app.dart';
 
 void main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize date formatting for Indonesian locale
   await initializeDateFormatting('id_ID', null);
 
-  // Set environment from dart-define
-  const envString = String.fromEnvironment('ENV', defaultValue: 'production');
+  // Set environment from dart-define (defaults to staging: https://test.intirasolusi.id/api)
+  const envString = String.fromEnvironment('ENV', defaultValue: 'staging');
   AppConfig.setFromString(envString);
 
   // Set preferred orientations
@@ -26,7 +24,7 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
     ),
   );
 
@@ -37,6 +35,5 @@ void main() async {
     debugPrint('Stack trace: ${details.stack}');
   };
 
-  FlutterNativeSplash.remove();
   runApp(const IntiraApp());
 }

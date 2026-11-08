@@ -26,13 +26,24 @@ class AppConfig {
           return 'http://127.0.0.1:8000/api';
         }
       case Environment.staging:
-        return 'https://testing.intirasolusi.id/api';
+        return 'https://test.intirasolusi.id/api';
       case Environment.production:
         return 'https://intirasolusi.id/api';
     }
   }
 
-  static String get appName => 'Intira Mobile';
+  static String get baseServerUrl {
+    switch (environment) {
+      case Environment.development:
+        return 'http://127.0.0.1:8000';
+      case Environment.staging:
+        return 'https://test.intirasolusi.id';
+      case Environment.production:
+        return 'https://intirasolusi.id';
+    }
+  }
+
+  static String get appName => 'GASPOL by INTIRA';
 
   static void setEnvironment(Environment env) {
     environment = env;
@@ -41,13 +52,20 @@ class AppConfig {
   static void setFromString(String? env) {
     switch (env?.toLowerCase()) {
       case 'production':
+      case 'prod':
         environment = Environment.production;
         break;
       case 'staging':
+      case 'test':
+      case 'testing':
         environment = Environment.staging;
         break;
-      default:
+      case 'development':
+      case 'dev':
         environment = Environment.development;
+        break;
+      default:
+        environment = Environment.staging;
     }
   }
 }

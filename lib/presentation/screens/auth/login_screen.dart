@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/app_input_styles.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/services/biometric_service.dart';
 
@@ -52,8 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Auto-prompt biometric jika sudah diaktifkan
       if (available && enabled) {
-        // Delay sedikit agar UI sudah siap
-        Future.delayed(const Duration(milliseconds: 500), () {
+        Future.delayed(const Duration(milliseconds: 400), () {
           if (mounted) _loginWithBiometric();
         });
       }
@@ -62,12 +60,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loginWithBiometric() async {
     final authenticated = await _biometricService.authenticate(
-      reason: 'Gunakan $_biometricTypeName untuk masuk',
+      reason: 'Gunakan $_biometricTypeName untuk masuk ke GASPOL by INTIRA',
     );
 
     if (authenticated && mounted) {
       final credentials = await _biometricService.getCredentials();
-      if (credentials != null) {
+      if (credentials != null && mounted) {
         context.read<AuthBloc>().add(AuthLogin(
               email: credentials.email,
               password: credentials.password,
@@ -80,17 +78,17 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(
           children: [
-            Icon(Icons.fingerprint, color: AppColors.primary, size: 28),
+            const Icon(Icons.fingerprint_rounded, color: Color(0xFF15803D), size: 28),
             const SizedBox(width: 12),
             Text('Aktifkan $_biometricTypeName?'),
           ],
         ),
         content: Text(
-          'Login lebih cepat menggunakan $_biometricTypeName di lain waktu.',
-          style: const TextStyle(color: AppColors.textSecondary),
+          'Login lebih cepat dan praktis menggunakan $_biometricTypeName di sesi berikutnya.',
+          style: const TextStyle(color: Color(0xFF64748B), fontSize: 13.5),
         ),
         actions: [
           TextButton(
@@ -98,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Navigator.pop(ctx);
               Navigator.pushReplacementNamed(context, '/dashboard');
             },
-            child: const Text('Nanti Saja'),
+            child: const Text('Nanti Saja', style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -106,20 +104,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 email: _emailController.text,
                 password: _passwordController.text,
               );
-              if (mounted) {
+              if (!mounted) return;
+              if (ctx.mounted) {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('$_biometricTypeName berhasil diaktifkan'),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-                Navigator.pushReplacementNamed(context, '/dashboard');
               }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$_biometricTypeName berhasil diaktifkan'),
+                  backgroundColor: const Color(0xFF15803D),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              Navigator.pushReplacementNamed(context, '/dashboard');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: const Color(0xFF15803D),
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: const Text('Aktifkan'),
           ),
@@ -131,25 +132,53 @@ class _LoginScreenState extends State<LoginScreen> {
   void _onSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(AuthLogin(
-            email: _emailController.text,
+            email: _emailController.text.trim(),
             password: _passwordController.text,
           ));
     }
   }
 
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: const [
+            Icon(Icons.help_outline_rounded, color: Color(0xFF15803D), size: 24),
+            SizedBox(width: 10),
+            Text('Lupa Password', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Untuk mengatur ulang password akun Anda, silakan hubungi tim Customer Service GASPOL atau kunjungi cabang Intira terdekat dengan membawa kartu identitas (KTP).',
+          style: TextStyle(fontSize: 13.5, color: Color(0xFF475569), height: 1.4),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF15803D),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            // Setelah login sukses, cek apakah perlu tawari biometric
             if (_biometricAvailable && !_biometricEnabled) {
-              // Tawari untuk aktifkan biometric
               _showBiometricEnableDialog();
             } else {
-              // Langsung ke dashboard
               Navigator.pushReplacementNamed(context, '/dashboard');
             }
           } else if (state is AuthError) {
@@ -157,6 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SnackBar(
                 content: Text(state.message),
                 backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
               ),
             );
           }
@@ -164,13 +194,23 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Gradient Header
+              // Vibrant Curved Header
               _buildHeader(context),
               
-              // Form Card
+              // Overlapping Modern Form Card
               Transform.translate(
-                offset: const Offset(0, -32),
-                child: _buildFormCard(context),
+                offset: const Offset(0, -30),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      _buildFormCard(context),
+                      const SizedBox(height: 20),
+                      _buildTrustFooter(),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -182,53 +222,62 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 60, bottom: 80, left: 24, right: 24),
+      padding: const EdgeInsets.only(top: 54, bottom: 64, left: 24, right: 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF14532D), // Pine green
+            Color(0xFF14532D), // Deep pine green
             Color(0xFF15803D), // Emerald green
           ],
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(36),
+          bottomRight: Radius.circular(36),
         ),
       ),
       child: Column(
         children: [
-          // Logo
+          // Logo GASPOL by INTIRA
           Container(
-            width: 72,
-            height: 72,
+            width: 86,
+            height: 86,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.account_balance,
-              size: 36,
-              color: Colors.white,
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/logo.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           const Text(
-            'INTIRA',
+            'GASPOL',
             style: TextStyle(
               color: Colors.white,
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              letterSpacing: 2,
+              letterSpacing: 2.5,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
-            'Customer Portal',
+            'by INTIRA',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
             ),
           ),
         ],
@@ -238,182 +287,250 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildFormCard(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      decoration: AppInputStyles.cardDecoration(),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Title
+            // Title & Subtitle
             const Text(
-              'Masuk',
+              'Masuk ke Akun',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.3,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             const Text(
-              'Masuk ke akun Anda untuk melanjutkan',
+              'Masukkan email & password akun Anda',
               style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
+                fontSize: 13,
+                color: Color(0xFF64748B),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
             // Email Field
-            AppTextField(
+            AppInputStyles.formLabel('Email', required: true),
+            TextFormField(
               controller: _emailController,
-              label: 'Email',
-              hint: 'Masukkan email',
               keyboardType: TextInputType.emailAddress,
-              prefixIcon: Icons.email_outlined,
               textInputAction: TextInputAction.next,
               validator: Validators.validateEmail,
+              decoration: AppInputStyles.inputDecoration(
+                hintText: 'nama@email.com',
+                prefixIcon: const Icon(
+                  Icons.email_outlined,
+                  color: Color(0xFF15803D),
+                  size: 20,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
 
             // Password Field
-            AppTextField(
-              controller: _passwordController,
-              label: 'Password',
-              hint: 'Masukkan password',
-              obscureText: _obscurePassword,
-              prefixIcon: Icons.lock_outlined,
-              textInputAction: TextInputAction.done,
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                  color: AppColors.textMuted,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AppInputStyles.formLabel('Password', required: true),
+                GestureDetector(
+                  onTap: _showForgotPasswordDialog,
+                  child: const Padding(
+                    padding: EdgeInsets.only(bottom: 7),
+                    child: Text(
+                      'Lupa Password?',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
+              ],
+            ),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.done,
               validator: Validators.validatePassword,
               onFieldSubmitted: (_) => _onSubmit(),
+              decoration: AppInputStyles.inputDecoration(
+                hintText: 'Masukkan password Anda',
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: Color(0xFF15803D),
+                  size: 20,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: const Color(0xFF64748B),
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 24),
 
             // Login Button
             BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
-                return AppButton(
-                  onPressed: state is AuthLoading ? null : _onSubmit,
-                  isLoading: state is AuthLoading,
-                  text: 'Masuk',
+                final isLoading = state is AuthLoading;
+                return SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : _onSubmit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF15803D),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Text(
+                                'Masuk Sekarang',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 18),
+                            ],
+                          ),
+                  ),
                 );
               },
             ),
 
-            // Biometric Login Button
+            // Biometric Option
             if (_biometricAvailable && _biometricEnabled) ...[
-              const SizedBox(height: 16),
-              BlocBuilder<AuthBloc, AuthState>(
-                builder: (context, state) {
-                  return InkWell(
-                    onTap: state is AuthLoading ? null : _loginWithBiometric,
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _loginWithBiometric,
+                icon: const Icon(Icons.fingerprint_rounded, color: Color(0xFF15803D), size: 22),
+                label: Text(
+                  'Masuk dengan $_biometricTypeName',
+                  style: const TextStyle(
+                    color: Color(0xFF15803D),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13.5,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF15803D), width: 1.2),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.fingerprint,
-                            color: state is AuthLoading
-                                ? AppColors.textMuted
-                                : AppColors.primary,
-                            size: 28,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Masuk dengan $_biometricTypeName',
-                            style: TextStyle(
-                              color: state is AuthLoading
-                                  ? AppColors.textMuted
-                                  : AppColors.primary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                  ),
+                ),
               ),
             ],
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 20),
 
             // Divider
             Row(
-              children: [
-                const Expanded(child: Divider(color: AppColors.border)),
+              children: const [
+                Expanded(child: Divider(color: Color(0xFFE2E8F0))),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 14),
                   child: Text(
                     'atau',
                     style: TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 14,
+                      color: Color(0xFF94A3B8),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                const Expanded(child: Divider(color: AppColors.border)),
+                Expanded(child: Divider(color: Color(0xFFE2E8F0))),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
 
-            // Register Link
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Belum punya akun? ',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.pushReplacementNamed(context, '/register-flow'),
-                  child: const Text(
-                    'Daftar Sekarang',
+            // Register CTA Button / Link
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFDCFCE7)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Belum punya akun? ',
                     style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF475569),
+                      fontSize: 13,
                     ),
                   ),
-                ),
-              ],
+                  GestureDetector(
+                    onTap: () => Navigator.pushReplacementNamed(context, '/register-flow'),
+                    child: const Text(
+                      'Daftar Sekarang',
+                      style: TextStyle(
+                        color: Color(0xFF15803D),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTrustFooter() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: const [
+        Icon(
+          Icons.verified_user_outlined,
+          size: 14,
+          color: Color(0xFF94A3B8),
+        ),
+        SizedBox(width: 6),
+        Text(
+          'Terpercaya & Berizin Resmi • Keamanan Terjamin',
+          style: TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

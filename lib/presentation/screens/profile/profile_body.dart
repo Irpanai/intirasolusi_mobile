@@ -651,7 +651,7 @@ class _ProfileBodyState extends State<ProfileBody> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Text('Konfirmasi Keluar', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun Intira Solusi?'),
+        content: const Text('Apakah Anda yakin ingin keluar dari akun GASPOL by INTIRA?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),

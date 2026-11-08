@@ -33,7 +33,7 @@ class IntiraApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Intira Mobile',
+        title: 'GASPOL by INTIRA',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         locale: const Locale('id', 'ID'),
