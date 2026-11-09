@@ -493,7 +493,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.pushReplacementNamed(context, '/register-flow'),
+                    onTap: () => Navigator.pushNamed(context, '/register-flow'),
                     child: const Text(
                       'Daftar Sekarang',
                       style: TextStyle(

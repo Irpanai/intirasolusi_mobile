@@ -76,7 +76,11 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
     if (_currentStep > 0) {
       _goToStep(_currentStep - 1);
     } else {
-      Navigator.pop(context);
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     }
   }
 
@@ -264,37 +268,44 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
   // ─────────────────────────────────────────────────────────────────── Build ─
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthAuthenticated) {
-            Navigator.pushReplacementNamed(context, '/dashboard');
-          } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.error,
-            ));
-          }
-        },
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildStepIndicator(),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => setState(() => _currentStep = i),
-                children: [
-                  _buildStep1(),
-                  _buildStep2(),
-                  _buildStepSelfie(),
-                  _buildStep3(),
-                ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _previousStep();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: BlocListener<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthAuthenticated) {
+              Navigator.pushReplacementNamed(context, '/dashboard');
+            } else if (state is AuthError) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppColors.error,
+              ));
+            }
+          },
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildStepIndicator(),
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (i) => setState(() => _currentStep = i),
+                  children: [
+                    _buildStep1(),
+                    _buildStep2(),
+                    _buildStepSelfie(),
+                    _buildStep3(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -636,8 +647,13 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
                       style: TextStyle(color: Color(0xFF475569), fontSize: 13),
                     ),
                     GestureDetector(
-                      onTap: () =>
-                          Navigator.pushReplacementNamed(context, '/login'),
+                      onTap: () {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        } else {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        }
+                      },
                       child: const Text(
                         'Masuk',
                         style: TextStyle(
