@@ -222,7 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 54, bottom: 64, left: 24, right: 24),
+      padding: const EdgeInsets.only(top: 50, bottom: 62, left: 24, right: 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -241,15 +241,15 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           // Logo GASPOL by INTIRA
           Container(
-            width: 86,
-            height: 86,
+            width: 82,
+            height: 82,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
@@ -260,12 +260,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           const Text(
             'GASPOL',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
               letterSpacing: 2.5,
             ),
@@ -275,9 +275,44 @@ class _LoginScreenState extends State<LoginScreen> {
             'by INTIRA',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Badge Resmi Berizin OJK di Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Berizin & Diawasi oleh',
+                  style: TextStyle(
+                    color: Color(0xFF334155),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Image.asset(
+                  'assets/images/ojk_logo.png',
+                  height: 16,
+                  fit: BoxFit.contain,
+                ),
+              ],
             ),
           ),
         ],
@@ -513,22 +548,63 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildTrustFooter() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
-        Icon(
-          Icons.verified_user_outlined,
-          size: 14,
-          color: Color(0xFF94A3B8),
-        ),
-        SizedBox(width: 6),
-        Text(
-          'Terpercaya & Berizin Resmi • Keamanan Terjamin',
-          style: TextStyle(
-            color: Color(0xFF94A3B8),
-            fontSize: 11.5,
-            fontWeight: FontWeight.w500,
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/images/ojk_logo.png',
+                height: 22,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(width: 10),
+              Container(width: 1, height: 18, color: const Color(0xFFCBD5E1)),
+              const SizedBox(width: 10),
+              const Text(
+                'Berizin & Diawasi Resmi OJK',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(
+              Icons.verified_user_outlined,
+              size: 13,
+              color: Color(0xFF94A3B8),
+            ),
+            SizedBox(width: 6),
+            Text(
+              'Terpercaya & Berizin Resmi • Keamanan Terjamin',
+              style: TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ],
     );
