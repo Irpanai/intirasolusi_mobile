@@ -2,7 +2,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:intirasolusi_mobile/app.dart';
+import 'package:intirasolusi_app/app.dart';
 
 void main() {
   testWidgets('App should build', (WidgetTester tester) async {
@@ -12,7 +12,7 @@ void main() {
     // Verify that app builds without throwing
     expect(find.byType(IntiraApp), findsOneWidget);
     
-    // Pump and settle to handle pending timers (e.g., splash screen delay)
-    await tester.pumpAndSettle(const Duration(seconds: 5));
+    // Pump to render first frame without waiting infinitely for background animation/video
+    await tester.pump(const Duration(milliseconds: 100));
   });
 }

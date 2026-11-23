@@ -1,9 +1,9 @@
 // Test untuk memastikan data phone dari registrasi terbawa ke complete profile
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:intirasolusi_mobile/presentation/screens/profile/profile_complete_screen.dart';
-import 'package:intirasolusi_mobile/presentation/blocs/auth/auth_bloc.dart';
-import 'package:intirasolusi_mobile/data/models/user_model.dart';
+import 'package:intirasolusi_app/presentation/screens/profile/profile_complete_screen.dart';
+import 'package:intirasolusi_app/presentation/blocs/auth/auth_bloc.dart';
+import 'package:intirasolusi_app/data/models/user_model.dart';
 
 void main() {
   group('Registration Phone Flow Tests', () {

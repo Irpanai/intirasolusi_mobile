@@ -284,28 +284,36 @@ class ActiveTransaction {
 
 class DashboardAlert {
   final String type;
+  final String? title;
   final String message;
   final String? actionUrl;
+  final String? action;
 
   DashboardAlert({
     required this.type,
+    this.title,
     required this.message,
     this.actionUrl,
+    this.action,
   });
 
   factory DashboardAlert.fromJson(Map<String, dynamic> json) {
     return DashboardAlert(
       type: json['type'] ?? 'info',
+      title: json['title'],
       message: json['message'] ?? '',
       actionUrl: json['action_url'],
+      action: json['action'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'type': type,
+      if (title != null) 'title': title,
       'message': message,
       'action_url': actionUrl,
+      if (action != null) 'action': action,
     };
   }
 }

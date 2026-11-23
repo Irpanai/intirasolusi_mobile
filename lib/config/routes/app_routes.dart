@@ -26,8 +26,10 @@ import '../../presentation/screens/financial_tools/dsr_calculator_screen.dart';
 import '../../presentation/screens/financial_tools/early_repayment_screen.dart';
 import '../../presentation/screens/article/article_list_screen.dart';
 import '../../presentation/screens/article/article_detail_screen.dart';
+import '../../presentation/screens/notification/notification_screen.dart';
 import '../../presentation/blocs/transaction/transaction_bloc.dart';
 import '../../presentation/blocs/article/article_bloc.dart';
+import '../../data/repositories/dashboard_repository.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -37,6 +39,7 @@ class AppRoutes {
   static const String registerFlow = '/register-flow';
   static const String completeProfile = '/complete-profile';
   static const String dashboard = '/dashboard';
+  static const String notifications = '/notifications';
   static const String calculator = '/calculator';
   static const String pawnRequests = '/pawn-requests';
   static const String pawnRequestCreate = '/pawn-requests/create';
@@ -85,6 +88,13 @@ class AppRoutes {
 
       case dashboard:
         return MaterialPageRoute(builder: (_) => const MainNavScreen(initialIndex: 0));
+
+      case notifications:
+        return MaterialPageRoute(
+          builder: (_) => NotificationScreen(
+            initialData: settings.arguments as DashboardData?,
+          ),
+        );
 
       case calculator:
         return MaterialPageRoute(builder: (_) => const CalculatorScreen());

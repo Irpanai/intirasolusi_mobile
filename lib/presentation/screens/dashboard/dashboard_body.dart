@@ -5,6 +5,7 @@ import '../../blocs/dashboard/dashboard_bloc.dart';
 import '../../blocs/article/article_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../config/routes/app_routes.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/utils/formatters.dart';
@@ -181,7 +182,13 @@ class _DashboardBodyState extends State<DashboardBody> {
                   ),
                   // Notification Bell
                   GestureDetector(
-                    onTap: () => _showNotifications(context, data),
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.notifications,
+                        arguments: data,
+                      );
+                    },
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
@@ -1419,234 +1426,5 @@ class _DashboardBodyState extends State<DashboardBody> {
       default:
         return status;
     }
-  }
-
-  void _showNotifications(BuildContext context, DashboardData data) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.75,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Notifikasi & Peringatan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  if (data.stats.overdueTransactions > 0)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: AppColors.error.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.warning_amber_rounded,
-                              color: AppColors.error, size: 22),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Peringatan Jatuh Tempo',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.error),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Anda memiliki ${data.stats.overdueTransactions} transaksi yang telah lewat jatuh tempo. Harap segera perpanjang atau tebus agunan Anda.',
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (!data.customer.isProfileComplete)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: AppColors.warning.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.person_outline,
-                              color: AppColors.warning, size: 22),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Profil Belum Lengkap',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Lengkapi data profil Anda untuk kemudahan pengajuan gadai online.',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary),
-                                ),
-                                const SizedBox(height: 8),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.pop(ctx);
-                                    Navigator.pushNamed(
-                                        context, '/complete-profile');
-                                  },
-                                  child: const Text(
-                                    'Lengkapi Sekarang →',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ...data.alerts.map((alert) => Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              alert.type == 'warning'
-                                   ? Icons.warning_amber_rounded
-                                  : alert.type == 'success'
-                                      ? Icons.check_circle_outline
-                                      : Icons.info_outline,
-                              color: alert.type == 'warning'
-                                  ? AppColors.warning
-                                  : alert.type == 'success'
-                                      ? AppColors.success
-                                      : AppColors.info,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                alert.message,
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textPrimary),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-                  if (data.alerts.isEmpty &&
-                      data.stats.overdueTransactions == 0 &&
-                      data.customer.isProfileComplete)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 40),
-                        child: Column(
-                          children: [
-                            Icon(Icons.notifications_none,
-                                size: 56, color: Colors.grey.shade400),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Belum ada notifikasi baru',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Semua transaksi dan pengajuan Anda dalam kondisi baik.',
-                              style: TextStyle(
-                                  fontSize: 12, color: AppColors.textMuted),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
