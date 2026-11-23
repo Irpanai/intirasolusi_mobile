@@ -105,6 +105,9 @@ class CacheService {
     }
   }
 
+  /// Alias for clearAllCache
+  Future<void> clearAll() => clearAllCache();
+
   /// Check if cache exists and is valid
   Future<bool> hasValidCache(String key) async {
     await init();

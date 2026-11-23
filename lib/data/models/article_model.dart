@@ -10,6 +10,7 @@ class ArticleModel {
   final String? featuredImageThumb;
   final List<ArticleAttachment>? attachments;
   final DateTime? publishedAt;
+  final DateTime? expiredAt;
   final DateTime? createdAt;
 
   ArticleModel({
@@ -24,8 +25,11 @@ class ArticleModel {
     this.featuredImageThumb,
     this.attachments,
     this.publishedAt,
+    this.expiredAt,
     this.createdAt,
   });
+
+  bool get isExpired => expiredAt != null && DateTime.now().isAfter(expiredAt!);
 
   factory ArticleModel.fromJson(Map<String, dynamic> json) {
     return ArticleModel(
@@ -45,6 +49,9 @@ class ArticleModel {
           : null,
       publishedAt: json['published_at'] != null
           ? DateTime.tryParse(json['published_at'].toString())
+          : null,
+      expiredAt: json['expired_at'] != null
+          ? DateTime.tryParse(json['expired_at'].toString())
           : null,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())

@@ -76,8 +76,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       }
     }
 
-    // 2. Fetch fresh data from network in background
-    await _loadDashboard(emit, forceRefresh: false);
+    // 2. Fetch fresh real-time data from server in background
+    await _loadDashboard(emit, forceRefresh: true);
   }
 
   Future<void> _onRefresh(

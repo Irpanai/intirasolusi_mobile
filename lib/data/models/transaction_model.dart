@@ -1,3 +1,5 @@
+import '../../core/utils/image_utils.dart';
+
 class TransactionProductModel {
   final int? id;
   final String? name;
@@ -57,6 +59,17 @@ class TransactionModel {
   final int? daysUntilDue;
   final bool isOverdue;
   final int extensionCount;
+  final String? akadNumber;
+  final String? akadType;
+  final bool? isSharia;
+  final int? daysOverdue;
+  final bool isDueSoonH3;
+  final String? auctionDate;
+  final String? auctionDateFormatted;
+  final bool isAuctionReady;
+  final bool isAuctioned;
+  final String? photoUrl;
+  final String? photoThumbUrl;
 
   TransactionModel({
     required this.id,
@@ -76,6 +89,17 @@ class TransactionModel {
     this.daysUntilDue,
     this.isOverdue = false,
     this.extensionCount = 0,
+    this.akadNumber,
+    this.akadType,
+    this.isSharia,
+    this.daysOverdue,
+    this.isDueSoonH3 = false,
+    this.auctionDate,
+    this.auctionDateFormatted,
+    this.isAuctionReady = false,
+    this.isAuctioned = false,
+    this.photoUrl,
+    this.photoThumbUrl,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -116,6 +140,22 @@ class TransactionModel {
       daysUntilDue: _parseInt(json['days_until_due']),
       isOverdue: json['is_overdue'] == true || json['status']?.toString().toUpperCase() == 'OVERDUE',
       extensionCount: _parseInt(json['extension_count']) ?? 0,
+      akadNumber: (json['akad_number']?.toString().replaceFirst(RegExp(r'^SBG-'), '')) ?? json['transaction_code']?.toString(),
+      akadType: json['akad_type']?.toString(),
+      isSharia: json['is_sharia'] == true || json['product']?['is_sharia'] == true,
+      daysOverdue: _parseInt(json['days_overdue']),
+      isDueSoonH3: json['is_due_soon_h3'] == true ||
+          (_parseInt(json['days_until_due']) != null &&
+              _parseInt(json['days_until_due'])! <= 3 &&
+              _parseInt(json['days_until_due'])! >= 0),
+      auctionDate: json['auction_date']?.toString(),
+      auctionDateFormatted: json['auction_date_formatted']?.toString(),
+      isAuctionReady: json['is_auction_ready'] == true ||
+          json['status']?.toString().toUpperCase() == 'AUCTION_READY',
+      isAuctioned: json['is_auctioned'] == true ||
+          json['status']?.toString().toUpperCase() == 'AUCTIONED',
+      photoUrl: ImageUtils.resolveImageUrl(json['photo_url']?.toString() ?? json['collateral_photo']?.toString()),
+      photoThumbUrl: ImageUtils.resolveImageUrl(json['photo_thumb_url']?.toString() ?? json['thumb_url']?.toString()),
     );
   }
 
@@ -128,7 +168,8 @@ class TransactionModel {
   static int? _parseInt(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;
-    return int.tryParse(value.toString());
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? double.tryParse(value.toString())?.toInt();
   }
 
   Map<String, dynamic> toJson() {
@@ -191,10 +232,12 @@ class CollateralPhotoModel {
 
   factory CollateralPhotoModel.fromJson(Map<String, dynamic> json) {
     final id = json['id'];
+    final rawUrl = json['url']?.toString() ?? json['photo_url']?.toString() ?? '';
+    final rawThumb = json['thumb_url']?.toString() ?? json['photo_thumb_url']?.toString() ?? rawUrl;
     return CollateralPhotoModel(
       id: id is int ? id : (int.tryParse(id?.toString() ?? '') ?? 0),
-      url: json['url']?.toString() ?? '',
-      thumbUrl: json['thumb_url']?.toString(),
+      url: ImageUtils.resolveImageUrl(rawUrl) ?? rawUrl,
+      thumbUrl: ImageUtils.resolveImageUrl(rawThumb) ?? ImageUtils.resolveImageUrl(rawUrl),
     );
   }
 
@@ -221,8 +264,14 @@ class TransactionDetailModel extends TransactionModel {
   final bool canExtend;
   final String? barcode;
   final String? notes;
+  final String? customerName;
+  final String? customerNik;
+  final String? customerCode;
+  final List<String>? akadClauses;
   final List<CollateralPhotoModel>? collateralPhotos;
   final List<TransactionHistoryModel>? history;
+  final String? customerPhotoUrl;
+  final String? idCardPhotoUrl;
 
   TransactionDetailModel({
     required super.id,
@@ -242,6 +291,17 @@ class TransactionDetailModel extends TransactionModel {
     super.daysUntilDue,
     super.isOverdue,
     super.extensionCount,
+    super.akadNumber,
+    super.akadType,
+    super.isSharia,
+    super.daysOverdue,
+    super.isDueSoonH3,
+    super.auctionDate,
+    super.auctionDateFormatted,
+    super.isAuctionReady,
+    super.isAuctioned,
+    super.photoUrl,
+    super.photoThumbUrl,
     this.collateralDescription,
     this.appraisedValue,
     this.appraisedValueFormatted,
@@ -257,6 +317,12 @@ class TransactionDetailModel extends TransactionModel {
     this.canExtend = false,
     this.barcode,
     this.notes,
+    this.customerName,
+    this.customerNik,
+    this.customerCode,
+    this.customerPhotoUrl,
+    this.idCardPhotoUrl,
+    this.akadClauses,
     this.collateralPhotos,
     this.history,
   });
@@ -302,6 +368,22 @@ class TransactionDetailModel extends TransactionModel {
       daysUntilDue: TransactionModel._parseInt(json['days_until_due']),
       isOverdue: json['is_overdue'] == true || json['status']?.toString().toUpperCase() == 'OVERDUE',
       extensionCount: TransactionModel._parseInt(json['extension_count']) ?? 0,
+      akadNumber: (json['akad_number']?.toString().replaceFirst(RegExp(r'^SBG-'), '')) ?? json['transaction_code']?.toString(),
+      akadType: json['akad_type']?.toString(),
+      isSharia: json['is_sharia'] == true || json['product']?['is_sharia'] == true,
+      daysOverdue: TransactionModel._parseInt(json['days_overdue']),
+      isDueSoonH3: json['is_due_soon_h3'] == true ||
+          (TransactionModel._parseInt(json['days_until_due']) != null &&
+              TransactionModel._parseInt(json['days_until_due'])! <= 3 &&
+              TransactionModel._parseInt(json['days_until_due'])! >= 0),
+      auctionDate: json['auction_date']?.toString(),
+      auctionDateFormatted: json['auction_date_formatted']?.toString(),
+      isAuctionReady: json['is_auction_ready'] == true ||
+          json['status']?.toString().toUpperCase() == 'AUCTION_READY',
+      isAuctioned: json['is_auctioned'] == true ||
+          json['status']?.toString().toUpperCase() == 'AUCTIONED',
+      photoUrl: ImageUtils.resolveImageUrl(json['photo_url']?.toString() ?? json['collateral_photo']?.toString()),
+      photoThumbUrl: ImageUtils.resolveImageUrl(json['photo_thumb_url']?.toString() ?? json['thumb_url']?.toString()),
       collateralDescription: (json['collateral_description'] ?? json['collateral']?['description'])?.toString(),
       appraisedValue: TransactionModel._parseDouble(appraisedValue),
       appraisedValueFormatted: appraisedValueFormatted?.toString(),
@@ -317,18 +399,48 @@ class TransactionDetailModel extends TransactionModel {
       canExtend: json['can_extend'] == true,
       barcode: json['barcode']?.toString(),
       notes: json['notes']?.toString(),
-      collateralPhotos: _parsePhotos(json['collateral_photos'] ?? json['photos']),
+      customerName: json['customer_name']?.toString(),
+      customerNik: json['customer_nik']?.toString(),
+      customerCode: json['customer_code']?.toString(),
+      customerPhotoUrl: ImageUtils.resolveImageUrl(json['customer_photo_url']?.toString() ?? json['customer_photo']?.toString()),
+      idCardPhotoUrl: ImageUtils.resolveImageUrl(json['id_card_photo_url']?.toString() ?? json['id_card_photo']?.toString()),
+      akadClauses: _parseClauses(json['akad_clauses']),
+      collateralPhotos: _parsePhotos(json['collateral_photos'] ?? json['photos']) ??
+          ((json['photo_url'] != null || json['photo_thumb_url'] != null)
+              ? [
+                  CollateralPhotoModel(
+                    id: 0,
+                    url: ImageUtils.resolveImageUrl(json['photo_url']?.toString()) ?? json['photo_url']?.toString() ?? '',
+                    thumbUrl: ImageUtils.resolveImageUrl(json['photo_thumb_url']?.toString()) ?? ImageUtils.resolveImageUrl(json['photo_url']?.toString()),
+                  )
+                ]
+              : null),
       history: _parseHistory(json['history']),
     );
+  }
+
+  static List<String>? _parseClauses(dynamic value) {
+    if (value == null || value is! List) return null;
+    return value.map((e) => e.toString()).toList();
   }
 
   static List<CollateralPhotoModel>? _parsePhotos(dynamic value) {
     if (value == null || value is! List) return null;
     try {
-      return value
-          .where((e) => e is Map<String, dynamic>)
-          .map((e) => CollateralPhotoModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final List<CollateralPhotoModel> photos = [];
+      for (int i = 0; i < value.length; i++) {
+        final item = value[i];
+        if (item is Map) {
+          photos.add(CollateralPhotoModel.fromJson(Map<String, dynamic>.from(item)));
+        } else if (item is String && item.isNotEmpty) {
+          photos.add(CollateralPhotoModel(
+            id: i,
+            url: ImageUtils.resolveImageUrl(item) ?? item,
+            thumbUrl: ImageUtils.resolveImageUrl(item),
+          ));
+        }
+      }
+      return photos.isNotEmpty ? photos : null;
     } catch (e) {
       return null;
     }
@@ -338,8 +450,8 @@ class TransactionDetailModel extends TransactionModel {
     if (value == null || value is! List) return null;
     try {
       return value
-          .where((e) => e is Map<String, dynamic>)
-          .map((e) => TransactionHistoryModel.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map((e) => TransactionHistoryModel.fromJson(e))
           .toList();
     } catch (e) {
       return null;

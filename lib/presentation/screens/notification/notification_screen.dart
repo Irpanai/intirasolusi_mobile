@@ -193,9 +193,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
       }
 
       // 3. Backend alerts
+      final Set<String> processedTxAlertCodes = {};
+
       for (int i = 0; i < data.alerts.length; i++) {
         final alert = data.alerts[i];
-        final alertId = 'backend_alert_${alert.type}_$i';
+        final alertId = alert.id ?? 'backend_alert_${alert.type}_$i';
 
         NotificationType type = NotificationType.info;
         NotificationCategory cat = NotificationCategory.account;
@@ -205,6 +207,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           cat = NotificationCategory.transaction;
         } else if (alert.type == 'warning') {
           type = NotificationType.warning;
+          cat = NotificationCategory.transaction;
         } else if (alert.type == 'success') {
           type = NotificationType.success;
           cat = NotificationCategory.pawnRequest;
@@ -224,6 +227,27 @@ class _NotificationScreenState extends State<NotificationScreen> {
           route = AppRoutes.pawnRequests;
           label = 'Lihat Pengajuan';
           cat = NotificationCategory.pawnRequest;
+        } else if (alert.action == 'view_transaction' ||
+            (alert.actionUrl != null && alert.actionUrl!.startsWith('/transactions/'))) {
+          route = alert.actionUrl;
+          label = 'Lihat Akad & Transaksi';
+          cat = NotificationCategory.transaction;
+
+          final txCode = alert.actionUrl!.replaceFirst('/transactions/', '');
+          if (txCode.isNotEmpty) {
+            processedTxAlertCodes.add(txCode);
+          }
+        }
+
+        String timeLabel = 'Hari ini';
+        if (alertId.startsWith('h3_')) {
+          timeLabel = 'Pengingat';
+        } else if (alertId.startsWith('overdue_')) {
+          timeLabel = 'Jatuh Tempo';
+        } else if (alertId.startsWith('auction_ready_')) {
+          timeLabel = 'Kritis';
+        } else if (alertId.startsWith('auctioned_')) {
+          timeLabel = 'Lelang';
         }
 
         items.add(
@@ -233,7 +257,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             message: alert.message,
             type: type,
             category: cat,
-            timeAgo: 'Hari ini',
+            timeAgo: timeLabel,
             actionRoute: route,
             actionLabel: label,
             isRead: _readIds.contains(alertId),
@@ -280,20 +304,71 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
       // 5. Active Transactions updates
       for (final tx in data.activeTransactions) {
-        if (tx.isOverdue) {
-          final txId = 'tx_overdue_${tx.code}';
-          final collateral = tx.collateralName.isNotEmpty ? tx.collateralName : 'barang agunan';
+        final collateral = tx.collateralName.isNotEmpty ? tx.collateralName : 'barang agunan';
+
+        if (tx.isAuctioned && !processedTxAlertCodes.contains(tx.code)) {
+          final txId = 'tx_auctioned_${tx.code}';
           items.add(
             NotificationItem(
               id: txId,
-              title: 'Agunan Lewat Jatuh Tempo: #${tx.code}',
+              title: 'Barang Agunan Masuk Lelang: #${tx.code}',
               message:
-                  'Transaksi $collateral telah jatuh tempo pada ${tx.dueDate ?? "tanggal jatuh tempo"}. Segera lakukan pelunasan untuk menghindari lelang.',
+                  'Barang agunan $collateral (#${tx.code}) telah dialihkan ke proses lelang resmi karena melewati batas toleransi.',
+              type: NotificationType.info,
+              category: NotificationCategory.transaction,
+              timeAgo: 'Lelang',
+              actionRoute: '/transactions/${tx.code}',
+              actionLabel: 'Lihat Akad & Transaksi',
+              isRead: _readIds.contains(txId),
+            ),
+          );
+        } else if (tx.isAuctionReady && !processedTxAlertCodes.contains(tx.code)) {
+          final txId = 'tx_auction_ready_${tx.code}';
+          items.add(
+            NotificationItem(
+              id: txId,
+              title: '⛔ PERINGATAN: Barang Siap Lelang: #${tx.code}',
+              message:
+                  'Masa perpanjangan agunan $collateral (#${tx.code}) telah habis. Segera lakukan pelunasan di cabang sebelum pelaksanaan lelang!',
+              type: NotificationType.danger,
+              category: NotificationCategory.transaction,
+              timeAgo: 'Kritis',
+              actionRoute: '/transactions/${tx.code}',
+              actionLabel: 'Tebus Sekarang',
+              isRead: _readIds.contains(txId),
+            ),
+          );
+        } else if (tx.isOverdue && !processedTxAlertCodes.contains(tx.code)) {
+          final txId = 'tx_overdue_${tx.code}';
+          final days = tx.daysOverdue ?? (tx.daysUntilDue != null ? tx.daysUntilDue!.abs() : 1);
+          items.add(
+            NotificationItem(
+              id: txId,
+              title: '⚠️ Agunan Lewat Jatuh Tempo ($days Hari): #${tx.code}',
+              message:
+                  'Transaksi $collateral telah jatuh tempo pada ${tx.dueDate ?? "tanggal jatuh tempo"}. Batas toleransi lelang: ${tx.auctionDate ?? "segera"}. Segera lunasi atau perpanjang.',
               type: NotificationType.danger,
               category: NotificationCategory.transaction,
               timeAgo: 'Jatuh Tempo',
               actionRoute: '/transactions/${tx.code}',
-              actionLabel: 'Tebus Sekarang',
+              actionLabel: 'Tebus / Perpanjang',
+              isRead: _readIds.contains(txId),
+            ),
+          );
+        } else if (tx.isDueSoonH3 && !processedTxAlertCodes.contains(tx.code)) {
+          final txId = 'tx_h3_${tx.code}';
+          final days = tx.daysUntilDue ?? 3;
+          items.add(
+            NotificationItem(
+              id: txId,
+              title: '🔔 Pengingat Jatuh Tempo (H-$days): #${tx.code}',
+              message:
+                  'Akad gadai $collateral (#${tx.code}) akan jatuh tempo dalam $days hari (${tx.dueDate ?? "-"}). Harap siapkan dana atau lakukan perpanjangan.',
+              type: NotificationType.warning,
+              category: NotificationCategory.transaction,
+              timeAgo: 'H-$days',
+              actionRoute: '/transactions/${tx.code}',
+              actionLabel: 'Lihat Akad',
               isRead: _readIds.contains(txId),
             ),
           );
@@ -604,31 +679,58 @@ class _NotificationScreenState extends State<NotificationScreen> {
     IconData icon;
     String badgeText;
 
-    switch (notif.type) {
-      case NotificationType.danger:
-        iconColor = const Color(0xFFEF4444);
-        iconBg = const Color(0xFFFEE2E2);
-        icon = Icons.warning_rounded;
-        badgeText = 'JATUH TEMPO';
-        break;
-      case NotificationType.warning:
-        iconColor = const Color(0xFFF59E0B);
-        iconBg = const Color(0xFFFEF3C7);
-        icon = Icons.info_rounded;
-        badgeText = 'PENTING';
-        break;
-      case NotificationType.success:
-        iconColor = const Color(0xFF10B981);
-        iconBg = const Color(0xFFD1FAE5);
-        icon = Icons.check_circle_rounded;
-        badgeText = 'DISETUJUI';
-        break;
-      case NotificationType.info:
-        iconColor = const Color(0xFF0284C7);
-        iconBg = const Color(0xFFE0F2FE);
-        icon = Icons.notifications_rounded;
-        badgeText = 'INFO';
-        break;
+    final String titleUpper = notif.title.toUpperCase();
+    final String idLower = notif.id.toLowerCase();
+
+    if (idLower.startsWith('auction_ready') ||
+        titleUpper.contains('SIAP LELANG') ||
+        titleUpper.contains('SIAP DILELANG')) {
+      iconColor = const Color(0xFFDC2626);
+      iconBg = const Color(0xFFFEE2E2);
+      icon = Icons.error_rounded;
+      badgeText = 'SIAP LELANG';
+    } else if (idLower.startsWith('auctioned') ||
+        titleUpper.contains('LELANG') ||
+        titleUpper.contains('DILELANG')) {
+      iconColor = const Color(0xFF475569);
+      iconBg = const Color(0xFFF1F5F9);
+      icon = Icons.gavel_rounded;
+      badgeText = 'LELANG';
+    } else if (idLower.startsWith('h3') ||
+        titleUpper.contains('H-3') ||
+        titleUpper.contains('H-2') ||
+        titleUpper.contains('H-1')) {
+      iconColor = const Color(0xFFD97706);
+      iconBg = const Color(0xFFFEF3C7);
+      icon = Icons.notifications_active_rounded;
+      badgeText = 'PENGINGAT H-3';
+    } else {
+      switch (notif.type) {
+        case NotificationType.danger:
+          iconColor = const Color(0xFFEF4444);
+          iconBg = const Color(0xFFFEE2E2);
+          icon = Icons.warning_rounded;
+          badgeText = 'JATUH TEMPO';
+          break;
+        case NotificationType.warning:
+          iconColor = const Color(0xFFF59E0B);
+          iconBg = const Color(0xFFFEF3C7);
+          icon = Icons.info_rounded;
+          badgeText = 'PENTING';
+          break;
+        case NotificationType.success:
+          iconColor = const Color(0xFF10B981);
+          iconBg = const Color(0xFFD1FAE5);
+          icon = Icons.check_circle_rounded;
+          badgeText = 'DISETUJUI';
+          break;
+        case NotificationType.info:
+          iconColor = const Color(0xFF0284C7);
+          iconBg = const Color(0xFFE0F2FE);
+          icon = Icons.notifications_rounded;
+          badgeText = 'INFO';
+          break;
+      }
     }
 
     return GestureDetector(

@@ -75,4 +75,17 @@ class ArticleRepository {
       throw ServerException(message: 'Gagal memuat detail berita');
     }
   }
+
+  Future<List<String>> getCategories() async {
+    try {
+      final response = await _apiClient.get('${ApiEndpoints.articles}/categories');
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final list = response.data['data'];
+        if (list is List && list.isNotEmpty) {
+          return list.map((e) => e.toString()).toList();
+        }
+      }
+    } catch (_) {}
+    return ['Investasi', 'Keuangan', 'Syariah', 'Bisnis', 'Edukasi'];
+  }
 }

@@ -3,6 +3,7 @@ import '../models/user_model.dart';
 import '../datasources/local/auth_local_datasource.dart';
 import '../datasources/remote/auth_remote_datasource.dart';
 import '../../core/errors/exceptions.dart';
+import '../../core/services/cache_service.dart';
 
 class AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
@@ -25,6 +26,8 @@ class AuthRepository {
       );
 
       final token = response['data']['token'] as String;
+      // Invalidate all old cached data on new login
+      await CacheService.instance.clearAll();
       await _localDataSource.cacheToken(token);
 
       // Combine user and customer data (API returns them separately)
@@ -74,6 +77,8 @@ class AuthRepository {
       );
 
       final token = response['data']['token'] as String;
+      // Invalidate all old cached data on new login
+      await CacheService.instance.clearAll();
       await _localDataSource.cacheToken(token);
 
       // Combine user and customer data (API returns them separately)
@@ -147,6 +152,8 @@ class AuthRepository {
       );
 
       final token = response['data']['token'] as String;
+      // Invalidate all old cached data on new login
+      await CacheService.instance.clearAll();
       await _localDataSource.cacheToken(token);
 
       // Combine user and customer data (API returns them separately)
@@ -210,6 +217,7 @@ class AuthRepository {
   Future<void> logout() async {
     await _remoteDataSource.logout();
     await _localDataSource.clearCache();
+    await CacheService.instance.clearAll();
   }
 
   Future<UserModel> updateProfile(Map<String, dynamic> data) async {

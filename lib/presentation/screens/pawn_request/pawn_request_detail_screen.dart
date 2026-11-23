@@ -5,6 +5,7 @@ import '../../../config/theme/app_colors.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../data/models/pawn_request_model.dart';
 import '../../blocs/pawn_request/pawn_request_bloc.dart';
 
@@ -628,27 +629,10 @@ class _PawnRequestDetailScreenState extends State<PawnRequestDetailScreen> {
                 onTap: () => _showPhotoViewer(context, photos, index),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    photos[index],
+                  child: AppNetworkImage(
+                    imageUrl: photos[index],
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: Colors.grey.shade200,
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey.shade200,
-                        child: Icon(
-                          Icons.broken_image,
-                          color: Colors.grey.shade400,
-                        ),
-                      );
-                    },
+                    placeholderIcon: Icons.image_outlined,
                   ),
                 ),
               );
@@ -979,24 +963,16 @@ class _PhotoViewerScreenState extends State<_PhotoViewerScreen> {
             minScale: 0.5,
             maxScale: 4.0,
             child: Center(
-              child: Image.network(
-                widget.photos[index],
+              child: AppNetworkImage(
+                imageUrl: widget.photos[index],
                 fit: BoxFit.contain,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      color: Colors.white54,
-                      size: 64,
-                    ),
-                  );
-                },
+                placeholder: const Center(
+                  child: Icon(
+                    Icons.broken_image,
+                    color: Colors.white54,
+                    size: 64,
+                  ),
+                ),
               ),
             ),
           );

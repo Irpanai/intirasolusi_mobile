@@ -12,6 +12,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/navigation_helper.dart';
 import '../../../data/repositories/dashboard_repository.dart';
 import '../../../data/models/article_model.dart';
+import '../../../core/widgets/app_network_image.dart';
 
 class DashboardBody extends StatefulWidget {
   const DashboardBody({super.key});
@@ -182,13 +183,7 @@ class _DashboardBodyState extends State<DashboardBody> {
                   ),
                   // Notification Bell
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.notifications,
-                        arguments: data,
-                      );
-                    },
+                    onTap: () => _showNotifications(context, data),
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
@@ -411,14 +406,10 @@ class _DashboardBodyState extends State<DashboardBody> {
 
   Widget _buildContent(BuildContext context, DashboardData data) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Pagination Indicator Dots (Hero Card Accent)
-          _buildDotsIndicator(),
-          const SizedBox(height: 20),
-
           // Quick Actions Grid (4 Icon Buttons)
           _buildQuickActions(context),
           const SizedBox(height: 22),
@@ -455,42 +446,6 @@ class _DashboardBodyState extends State<DashboardBody> {
 
           // Educational Articles / News Section
           _buildLatestNewsSection(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDotsIndicator() {
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 20,
-            height: 5,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(width: 5),
-          Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 5),
-          Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              shape: BoxShape.circle,
-            ),
-          ),
         ],
       ),
     );
@@ -541,28 +496,38 @@ class _DashboardBodyState extends State<DashboardBody> {
         child: Column(
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4), // Mint tint
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: const Color(0xFFDCFCE7),
+                  color: const Color(0xFFE2E8F0),
                   width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: const Color(0xFF14532D).withValues(alpha: 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Center(
-                child: Icon(
-                  icon,
-                  color: AppColors.primary,
-                  size: 26,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      icon,
+                      color: const Color(0xFF15803D),
+                      size: 24,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -572,7 +537,7 @@ class _DashboardBodyState extends State<DashboardBody> {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -1021,10 +986,23 @@ class _DashboardBodyState extends State<DashboardBody> {
                     : const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                iconData,
-                color: isOverdue ? AppColors.error : AppColors.primary,
-                size: 22,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: (transaction.photoUrl != null || transaction.photoThumbUrl != null)
+                    ? AppNetworkImage(
+                        imageUrl: transaction.photoUrl ?? transaction.photoThumbUrl,
+                        width: 46,
+                        height: 46,
+                        fit: BoxFit.cover,
+                        placeholderIcon: iconData,
+                      )
+                    : Center(
+                        child: Icon(
+                          iconData,
+                          color: isOverdue ? AppColors.error : AppColors.primary,
+                          size: 22,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 12),
@@ -1077,26 +1055,53 @@ class _DashboardBodyState extends State<DashboardBody> {
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isOverdue
-                    ? const Color(0xFFFEE2E2)
-                    : const Color(0xFFDCFCE7),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                isOverdue
-                    ? 'Jatuh Tempo'
-                    : (transaction.daysUntilDue != null
-                        ? '${transaction.daysUntilDue} hari lagi'
-                        : 'Aktif'),
-                style: TextStyle(
-                  color: isOverdue ? const Color(0xFFDC2626) : const Color(0xFF15803D),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            Builder(
+              builder: (context) {
+                Color badgeBg;
+                Color badgeText;
+                String label;
+
+                if (transaction.isAuctioned) {
+                  badgeBg = const Color(0xFFF1F5F9);
+                  badgeText = const Color(0xFF475569);
+                  label = 'Dilelang';
+                } else if (transaction.isAuctionReady) {
+                  badgeBg = const Color(0xFFFEF2F2);
+                  badgeText = const Color(0xFFDC2626);
+                  label = 'Siap Lelang';
+                } else if (isOverdue) {
+                  badgeBg = const Color(0xFFFEE2E2);
+                  badgeText = const Color(0xFFDC2626);
+                  final days = transaction.daysOverdue ?? 1;
+                  label = '$days hr lewat';
+                } else if (transaction.isDueSoonH3) {
+                  badgeBg = const Color(0xFFFEF3C7);
+                  badgeText = const Color(0xFFD97706);
+                  label = 'H-${transaction.daysUntilDue ?? 3}';
+                } else {
+                  badgeBg = const Color(0xFFDCFCE7);
+                  badgeText = const Color(0xFF15803D);
+                  label = transaction.daysUntilDue != null
+                      ? '${transaction.daysUntilDue} hari lagi'
+                      : 'Aktif';
+                }
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: badgeText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -1284,27 +1289,15 @@ class _DashboardBodyState extends State<DashboardBody> {
         ),
         child: Row(
           children: [
-            ClipRRect(
+            AppNetworkImage(
+              imageUrl: article.featuredImageThumb,
+              width: 95,
+              height: 85,
+              fit: BoxFit.cover,
+              category: article.category,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 bottomLeft: Radius.circular(16),
-              ),
-              child: SizedBox(
-                width: 95,
-                height: 85,
-                child: article.featuredImageThumb != null
-                    ? Image.network(
-                        article.featuredImageThumb!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: const Color(0xFFF1F5F9),
-                          child: const Icon(Icons.article_outlined, color: AppColors.textMuted, size: 26),
-                        ),
-                      )
-                    : Container(
-                        color: const Color(0xFFF1F5F9),
-                        child: const Icon(Icons.article_outlined, color: AppColors.textMuted, size: 26),
-                      ),
               ),
             ),
             Expanded(
@@ -1426,5 +1419,13 @@ class _DashboardBodyState extends State<DashboardBody> {
       default:
         return status;
     }
+  }
+
+  void _showNotifications(BuildContext context, DashboardData data) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.notifications,
+      arguments: data,
+    );
   }
 }

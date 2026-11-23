@@ -8,6 +8,8 @@ import '../../../config/theme/app_colors.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/gradient_header.dart';
+import '../../../core/widgets/app_network_image.dart';
+import '../../../core/utils/image_utils.dart';
 import '../../../data/models/article_model.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
@@ -27,15 +29,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   }
 
   String? _resolveImageUrl(String? url) {
-    if (url == null || url.isEmpty) return null;
-    // Normalize localhost / 127.0.0.1 port 80 to port 8000
-    if (url.contains('localhost/storage')) {
-      return url.replaceFirst('localhost/storage', '127.0.0.1:8000/storage');
-    }
-    if (url.contains('127.0.0.1/storage') && !url.contains(':8000')) {
-      return url.replaceFirst('127.0.0.1/storage', '127.0.0.1:8000/storage');
-    }
-    return url;
+    return ImageUtils.resolveImageUrl(url);
   }
 
   @override
@@ -81,7 +75,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   }
 
   Widget _buildContent(BuildContext context, ArticleModel article) {
-    final resolvedImage = _resolveImageUrl(article.featuredImage);
     final wordCount = article.content?.split(RegExp(r'\s+')).length ?? 100;
     final readTime = (wordCount / 180).ceil().clamp(1, 15);
 
@@ -140,14 +133,13 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                if (resolvedImage != null)
-                  Image.network(
-                    resolvedImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
-                  )
-                else
-                  _buildPlaceholderImage(),
+                AppNetworkImage(
+                  imageUrl: article.featuredImage,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: _buildPlaceholderImage(),
+                ),
                 // Bottom & top gradient protection
                 Container(
                   decoration: BoxDecoration(
@@ -436,6 +428,50 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
       case 'p':
         final text = element.text.trim();
         if (text.isEmpty) return null;
+
+        // Check if paragraph is actually a plain text list (lines starting with •, -, *)
+        final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+        final isBulletList = lines.length > 1 &&
+            lines.every((l) => l.startsWith('•') || l.startsWith('- ') || l.startsWith('* '));
+        if (isBulletList) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: lines.map((line) {
+                final cleaned = line.replaceFirst(RegExp(r'^[•\-\*]\s*'), '');
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 8, right: 10),
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF15803D),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          cleaned,
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            height: 1.6,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          );
+        }
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: Text.rich(
@@ -485,6 +521,19 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
           child: Divider(color: Color(0xFFE2E8F0)),
         );
 
+      case 'img':
+        final src = element.attributes['src'];
+        if (src == null || src.isEmpty) return null;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: AppNetworkImage(
+            imageUrl: src,
+            width: double.infinity,
+            borderRadius: BorderRadius.circular(12),
+            fit: BoxFit.contain,
+          ),
+        );
+
       default:
         final text = element.text.trim();
         if (text.isEmpty) return null;
@@ -502,6 +551,14 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
     final trElements = tableElement.querySelectorAll('tr');
     if (trElements.isEmpty) return const SizedBox.shrink();
 
+    // Determine max columns across all rows
+    int maxCols = 0;
+    for (final tr in trElements) {
+      final cells = tr.querySelectorAll('th, td');
+      if (cells.length > maxCols) maxCols = cells.length;
+    }
+    if (maxCols == 0) return const SizedBox.shrink();
+
     final tableRows = <TableRow>[];
 
     for (int rowIndex = 0; rowIndex < trElements.length; rowIndex++) {
@@ -511,7 +568,29 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
       final isHeader = thCells.isNotEmpty;
       final cells = isHeader ? thCells : tdCells;
 
-      if (cells.isEmpty) continue;
+      final rowChildren = <Widget>[];
+      for (int c = 0; c < maxCols; c++) {
+        if (c < cells.length) {
+          final cell = cells[c];
+          rowChildren.add(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                cell.text.trim(),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isHeader ? FontWeight.bold : FontWeight.w500,
+                  color: isHeader ? const Color(0xFF0F172A) : const Color(0xFF334155),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          );
+        } else {
+          rowChildren.add(const SizedBox.shrink());
+        }
+      }
 
       tableRows.add(
         TableRow(
@@ -520,20 +599,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                 ? const Color(0xFFF1F5F9)
                 : (rowIndex % 2 == 1 ? Colors.white : const Color(0xFFF8FAFC)),
           ),
-          children: cells.map((cell) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Text(
-                cell.text.trim(),
-                style: TextStyle(
-                  fontSize: isHeader ? 13.5 : 13.5,
-                  fontWeight: isHeader ? FontWeight.bold : FontWeight.w500,
-                  color: isHeader ? const Color(0xFF0F172A) : const Color(0xFF334155),
-                  height: 1.4,
-                ),
-              ),
-            );
-          }).toList(),
+          children: rowChildren,
         ),
       );
     }
@@ -553,15 +619,19 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Table(
-        columnWidths: const {
-          0: FlexColumnWidth(1.2),
-          1: FlexColumnWidth(1.0),
-        },
-        border: const TableBorder(
-          horizontalInside: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 320),
+          child: Table(
+            defaultColumnWidth: const IntrinsicColumnWidth(),
+            border: const TableBorder(
+              horizontalInside: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+              verticalInside: BorderSide(color: Color(0xFFF1F5F9), width: 1),
+            ),
+            children: tableRows,
+          ),
         ),
-        children: tableRows,
       ),
     );
   }

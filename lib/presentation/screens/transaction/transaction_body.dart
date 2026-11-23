@@ -6,6 +6,7 @@ import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/filter_tabs.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../data/models/transaction_model.dart';
 
 class TransactionBody extends StatefulWidget {
@@ -378,10 +379,23 @@ class _TransactionBodyState extends State<TransactionBody> {
                 color: isOverdue ? const Color(0xFFFEE2E2) : const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                iconData,
-                color: isOverdue ? AppColors.error : AppColors.primary,
-                size: 22,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: (transaction.photoUrl != null || transaction.photoThumbUrl != null)
+                    ? AppNetworkImage(
+                        imageUrl: transaction.photoUrl ?? transaction.photoThumbUrl,
+                        width: 46,
+                        height: 46,
+                        fit: BoxFit.cover,
+                        placeholderIcon: iconData,
+                      )
+                    : Center(
+                        child: Icon(
+                          iconData,
+                          color: isOverdue ? AppColors.error : AppColors.primary,
+                          size: 22,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 12),
@@ -432,34 +446,55 @@ class _TransactionBodyState extends State<TransactionBody> {
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isOverdue
-                    ? const Color(0xFFFEE2E2)
-                    : (transaction.status.toLowerCase() == 'completed'
-                        ? const Color(0xFFF1F5F9)
-                        : const Color(0xFFDCFCE7)),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                isOverdue
-                    ? 'Jatuh Tempo'
-                    : (transaction.status.toLowerCase() == 'completed'
-                        ? 'Lunas'
-                        : (transaction.dueDateFormatted != null
-                            ? transaction.dueDateFormatted!
-                            : 'Aktif')),
-                style: TextStyle(
-                  color: isOverdue
-                      ? const Color(0xFFDC2626)
-                      : (transaction.status.toLowerCase() == 'completed'
-                          ? AppColors.textMuted
-                          : const Color(0xFF15803D)),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            Builder(
+              builder: (context) {
+                Color badgeBg;
+                Color badgeText;
+                String label;
+
+                if (transaction.isAuctioned) {
+                  badgeBg = const Color(0xFFF1F5F9);
+                  badgeText = const Color(0xFF475569);
+                  label = 'Dilelang';
+                } else if (transaction.isAuctionReady) {
+                  badgeBg = const Color(0xFFFEF2F2);
+                  badgeText = const Color(0xFFDC2626);
+                  label = 'Siap Lelang';
+                } else if (isOverdue) {
+                  badgeBg = const Color(0xFFFEE2E2);
+                  badgeText = const Color(0xFFDC2626);
+                  final days = transaction.daysOverdue ?? 1;
+                  label = '$days hr lewat';
+                } else if (transaction.isDueSoonH3) {
+                  badgeBg = const Color(0xFFFEF3C7);
+                  badgeText = const Color(0xFFD97706);
+                  label = 'H-${transaction.daysUntilDue ?? 3}';
+                } else if (transaction.status.toLowerCase() == 'completed') {
+                  badgeBg = const Color(0xFFF1F5F9);
+                  badgeText = AppColors.textMuted;
+                  label = 'Lunas';
+                } else {
+                  badgeBg = const Color(0xFFDCFCE7);
+                  badgeText = const Color(0xFF15803D);
+                  label = transaction.dueDateFormatted ?? 'Aktif';
+                }
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: badgeText,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),

@@ -391,10 +391,10 @@ class _ProfileBodyState extends State<ProfileBody> {
             Expanded(
               child: _buildGridItem(
                 context,
-                icon: Icons.receipt_long_outlined,
-                title: 'Mutasi Rekening',
-                subtitle: 'Riwayat transaksi gadai',
-                onTap: () => Navigator.pushNamed(context, '/transactions'),
+                icon: Icons.post_add_rounded,
+                title: 'Pengajuan Gadai',
+                subtitle: 'Status proses & riwayat',
+                onTap: () => Navigator.pushNamed(context, '/pawn-requests'),
               ),
             ),
           ],

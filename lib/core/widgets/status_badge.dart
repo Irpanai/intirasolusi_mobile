@@ -12,6 +12,8 @@ enum StatusType {
   completed,
   overdue,
   extended,
+  auctionReady,
+  auctioned,
 }
 
 class StatusBadge extends StatelessWidget {
@@ -85,6 +87,18 @@ class StatusBadge extends StatelessWidget {
         type = StatusType.extended;
         label = 'Diperpanjang';
         break;
+      case 'auction_ready':
+      case 'siap_lelang':
+        type = StatusType.auctionReady;
+        label = 'Siap Lelang';
+        break;
+      case 'auctioned':
+      case 'auction':
+      case 'lelang':
+      case 'dilelang':
+        type = StatusType.auctioned;
+        label = 'Dilelang';
+        break;
       default:
         type = StatusType.pending;
         label = status;
@@ -115,6 +129,10 @@ class StatusBadge extends StatelessWidget {
         return AppColors.statusOverdue.withValues(alpha: 0.1);
       case StatusType.extended:
         return AppColors.statusExtended.withValues(alpha: 0.1);
+      case StatusType.auctionReady:
+        return Colors.deepOrange.withValues(alpha: 0.12);
+      case StatusType.auctioned:
+        return Colors.blueGrey.withValues(alpha: 0.12);
     }
   }
 
@@ -140,6 +158,10 @@ class StatusBadge extends StatelessWidget {
         return AppColors.statusOverdue;
       case StatusType.extended:
         return AppColors.statusExtended;
+      case StatusType.auctionReady:
+        return Colors.deepOrange.shade800;
+      case StatusType.auctioned:
+        return Colors.blueGrey.shade800;
     }
   }
 

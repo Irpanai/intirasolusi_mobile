@@ -5,7 +5,9 @@ import '../../blocs/article/article_bloc.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../data/models/article_model.dart';
+import '../../../data/repositories/article_repository.dart';
 
 class ArticleListScreen extends StatefulWidget {
   const ArticleListScreen({super.key});
@@ -19,12 +21,12 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCategory;
 
-  static const List<String> _categories = [
-    'Promo',
+  List<String> _categories = [
+    'Investasi',
+    'Keuangan',
+    'Syariah',
+    'Bisnis',
     'Edukasi',
-    'Info',
-    'Berita',
-    'Tips',
   ];
 
   @override
@@ -32,6 +34,16 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
     super.initState();
     context.read<ArticleBloc>().add(ArticleLoadList());
     _scrollController.addListener(_onScroll);
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final cats = await ArticleRepository().getCategories();
+    if (mounted && cats.isNotEmpty) {
+      setState(() {
+        _categories = cats;
+      });
+    }
   }
 
   @override
@@ -78,7 +90,7 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
           Expanded(
             child: BlocBuilder<ArticleBloc, ArticleState>(
               builder: (context, state) {
-                if (state is ArticleListLoading) {
+                if (state is ArticleInitial || state is ArticleListLoading) {
                   return const LoadingWidget(message: 'Memuat berita...');
                 }
 
@@ -319,21 +331,15 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
         child: Row(
           children: [
             // Thumbnail
-            ClipRRect(
+            AppNetworkImage(
+              imageUrl: article.featuredImageThumb,
+              width: 100,
+              height: 90,
+              fit: BoxFit.cover,
+              category: article.category,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 bottomLeft: Radius.circular(16),
-              ),
-              child: SizedBox(
-                width: 100,
-                height: 90,
-                child: article.featuredImageThumb != null
-                    ? Image.network(
-                        article.featuredImageThumb!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                      )
-                    : _buildPlaceholder(),
               ),
             ),
             // Content
@@ -388,13 +394,6 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: const Color(0xFFF1F5F9),
-      child: const Icon(Icons.article_outlined, color: AppColors.textMuted, size: 28),
     );
   }
 }

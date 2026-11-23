@@ -3,6 +3,7 @@ import '../../core/network/api_client.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/services/cache_service.dart';
+import '../../core/utils/image_utils.dart';
 
 class DashboardData {
   final CustomerInfo customer;
@@ -230,6 +231,15 @@ class ActiveTransaction {
   final String? dueDate;
   final int? daysUntilDue;
   final bool isOverdue;
+  final String? status;
+  final int? daysOverdue;
+  final bool isDueSoonH3;
+  final bool isAuctionReady;
+  final bool isAuctioned;
+  final String? auctionDate;
+  final String? akadNumber;
+  final String? photoUrl;
+  final String? photoThumbUrl;
 
   ActiveTransaction({
     required this.code,
@@ -239,6 +249,15 @@ class ActiveTransaction {
     this.dueDate,
     this.daysUntilDue,
     this.isOverdue = false,
+    this.status,
+    this.daysOverdue,
+    this.isDueSoonH3 = false,
+    this.isAuctionReady = false,
+    this.isAuctioned = false,
+    this.auctionDate,
+    this.akadNumber,
+    this.photoUrl,
+    this.photoThumbUrl,
   });
 
   factory ActiveTransaction.fromJson(Map<String, dynamic> json) {
@@ -265,7 +284,20 @@ class ActiveTransaction {
       loanAmountFormatted: formatted,
       dueDate: json['due_date']?.toString(),
       daysUntilDue: json['days_until_due'] is int ? json['days_until_due'] : null,
-      isOverdue: json['is_overdue'] == true,
+      isOverdue: json['is_overdue'] == true || json['status']?.toString().toUpperCase() == 'OVERDUE',
+      status: json['status']?.toString(),
+      daysOverdue: json['days_overdue'] is int
+          ? json['days_overdue']
+          : int.tryParse(json['days_overdue']?.toString() ?? ''),
+      isDueSoonH3: json['is_due_soon_h3'] == true,
+      isAuctionReady: json['is_auction_ready'] == true ||
+          json['status']?.toString().toUpperCase() == 'AUCTION_READY',
+      isAuctioned: json['is_auctioned'] == true ||
+          json['status']?.toString().toUpperCase() == 'AUCTIONED',
+      auctionDate: json['auction_date']?.toString(),
+      akadNumber: (json['akad_number']?.toString().replaceFirst(RegExp(r'^SBG-'), '')) ?? json['transaction_code']?.toString(),
+      photoUrl: ImageUtils.resolveImageUrl(json['photo_url']?.toString() ?? json['collateral_photo']?.toString()),
+      photoThumbUrl: ImageUtils.resolveImageUrl(json['photo_thumb_url']?.toString() ?? json['thumb_url']?.toString()),
     );
   }
 
@@ -278,11 +310,21 @@ class ActiveTransaction {
       'due_date': dueDate,
       'days_until_due': daysUntilDue,
       'is_overdue': isOverdue,
+      'status': status,
+      'days_overdue': daysOverdue,
+      'is_due_soon_h3': isDueSoonH3,
+      'is_auction_ready': isAuctionReady,
+      'is_auctioned': isAuctioned,
+      'auction_date': auctionDate,
+      'akad_number': akadNumber,
+      'photo_url': photoUrl,
+      'photo_thumb_url': photoThumbUrl,
     };
   }
 }
 
 class DashboardAlert {
+  final String? id;
   final String type;
   final String? title;
   final String message;
@@ -290,6 +332,7 @@ class DashboardAlert {
   final String? action;
 
   DashboardAlert({
+    this.id,
     required this.type,
     this.title,
     required this.message,
@@ -299,6 +342,7 @@ class DashboardAlert {
 
   factory DashboardAlert.fromJson(Map<String, dynamic> json) {
     return DashboardAlert(
+      id: json['id']?.toString(),
       type: json['type'] ?? 'info',
       title: json['title'],
       message: json['message'] ?? '',
@@ -309,6 +353,7 @@ class DashboardAlert {
 
   Map<String, dynamic> toJson() {
     return {
+      if (id != null) 'id': id,
       'type': type,
       if (title != null) 'title': title,
       'message': message,
