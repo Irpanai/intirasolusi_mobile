@@ -26,9 +26,9 @@ class AppConfig {
           return 'http://127.0.0.1:8000/api';
         }
       case Environment.staging:
-        return 'https://test.intirasolusi.id/api';
+        return 'https://test.gadaiintira.com/api';
       case Environment.production:
-        return 'https://intirasolusi.id/api';
+        return 'https://gadaiintira.com/api';
     }
   }
 
@@ -37,9 +37,9 @@ class AppConfig {
       case Environment.development:
         return 'http://127.0.0.1:8000';
       case Environment.staging:
-        return 'https://test.intirasolusi.id';
+        return 'https://test.gadaiintira.com';
       case Environment.production:
-        return 'https://intirasolusi.id';
+        return 'https://gadaiintira.com';
     }
   }
 

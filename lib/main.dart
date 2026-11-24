@@ -10,7 +10,7 @@ void main() async {
   // Initialize date formatting for Indonesian locale
   await initializeDateFormatting('id_ID', null);
 
-  // Set environment from dart-define (defaults to staging: https://test.intirasolusi.id/api)
+  // Set environment from dart-define (defaults to staging: https://test.gadaiintira.com/api)
   const envString = String.fromEnvironment('ENV', defaultValue: 'staging');
   AppConfig.setFromString(envString);
 

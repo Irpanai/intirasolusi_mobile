@@ -25,7 +25,13 @@ class ImageUtils {
       trimmed = '${AppConfig.baseServerUrl}/$trimmed';
     }
 
-    // 3. Normalize localhost / 127.0.0.1 to current baseServerUrl if not development
+    // 3. Normalize localhost / 127.0.0.1 or legacy domains to current baseServerUrl
+    if (trimmed.contains('test.intirasolusi.id')) {
+      trimmed = trimmed.replaceFirst('test.intirasolusi.id', 'test.gadaiintira.com');
+    } else if (trimmed.contains('intirasolusi.id')) {
+      trimmed = trimmed.replaceFirst('intirasolusi.id', 'gadaiintira.com');
+    }
+
     if (AppConfig.environment != Environment.development) {
       if (trimmed.contains('127.0.0.1:8000')) {
         trimmed = trimmed.replaceFirst('http://127.0.0.1:8000', AppConfig.baseServerUrl);
@@ -43,7 +49,7 @@ class ImageUtils {
       trimmed = trimmed.replaceFirst('http://', 'https://');
     }
 
-    // 5. If running on Flutter Web (kIsWeb) and accessing test.intirasolusi.id or external storage,
+    // 5. If running on Flutter Web (kIsWeb) and accessing test.gadaiintira.com, gadaiintira.com or external storage,
     // browser CanvasKit blocks cross-origin images without CORS headers.
     // Proxying through wsrv.nl provides instant Access-Control-Allow-Origin: * for seamless web testing.
     // On native Android/iOS (in APK), kIsWeb is false, so it loads directly from server.
