@@ -27,6 +27,7 @@ import '../../presentation/screens/financial_tools/early_repayment_screen.dart';
 import '../../presentation/screens/article/article_list_screen.dart';
 import '../../presentation/screens/article/article_detail_screen.dart';
 import '../../presentation/screens/notification/notification_screen.dart';
+import '../../presentation/screens/legal/privacy_policy_screen.dart';
 import '../../presentation/blocs/transaction/transaction_bloc.dart';
 import '../../presentation/blocs/article/article_bloc.dart';
 import '../../data/repositories/dashboard_repository.dart';
@@ -60,6 +61,7 @@ class AppRoutes {
   static const String dsrCalculator = '/financial-tools/dsr-calculator';
   static const String earlyRepayment = '/financial-tools/early-repayment';
   static const String articles = '/articles';
+  static const String privacyPolicy = '/privacy-policy';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -160,6 +162,9 @@ class AppRoutes {
             child: const ArticleListScreen(),
           ),
         );
+
+      case privacyPolicy:
+        return MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen());
 
       default:
         // Handle dynamic routes

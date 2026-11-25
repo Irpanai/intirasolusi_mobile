@@ -382,7 +382,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         id: 'system_welcome',
         title: 'Selamat Datang di GASPOL by INTIRA',
         message:
-            'Aplikasi gadai online resmi & terpercaya. Seluruh transaksi gadai aman, berizin dan diawasi oleh Otoritas Jasa Keuangan (OJK).',
+            'Aplikasi gadai online aman & terpercaya. Kelola pengajuan, akad, dan transaksi gadai Anda dengan mudah.',
         type: NotificationType.info,
         category: NotificationCategory.account,
         timeAgo: 'Informasi',

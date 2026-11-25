@@ -1,6 +1,9 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Camera permission for KTP scan & selfie KYC -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Remove unused microphone permission injected by camera plugin (app uses enableAudio: false) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
     <!-- Location permissions for nearby branches feature -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

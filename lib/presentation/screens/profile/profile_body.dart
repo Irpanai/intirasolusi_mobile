@@ -350,6 +350,13 @@ class _ProfileBodyState extends State<ProfileBody> {
               subtitle: 'Amankan akun dengan kata sandi baru',
               onTap: () => Navigator.pushNamed(context, '/profile/change-password'),
             ),
+            const Divider(height: 1, indent: 56),
+            _buildListTile(
+              icon: Icons.privacy_tip_outlined,
+              title: 'Kebijakan Privasi',
+              subtitle: 'Informasi perlindungan data & hak pengguna',
+              onTap: () => Navigator.pushNamed(context, '/privacy-policy'),
+            ),
           ]),
           const SizedBox(height: 24),
 
@@ -360,7 +367,7 @@ class _ProfileBodyState extends State<ProfileBody> {
           // App Version
           Center(
             child: Text(
-              'Intira Solusi Mobile v1.0.0 • OJK Compliance',
+              'GASPOL by INTIRA v1.0.0 • PT. Gadai Intira Nusantara',
               style: TextStyle(
                 fontSize: 11.5,
                 color: AppColors.textMuted,

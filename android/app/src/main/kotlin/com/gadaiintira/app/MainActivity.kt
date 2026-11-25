@@ -1,4 +1,4 @@
-package com.intirasolusi.app
+package com.gadaiintira.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

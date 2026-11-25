@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -458,29 +459,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       });
                     },
                     child: RichText(
-                      text: const TextSpan(
-                        style: TextStyle(
+                      text: TextSpan(
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.textSecondary,
                         ),
                         children: [
-                          TextSpan(text: 'Saya menyetujui '),
-                          TextSpan(
+                          const TextSpan(text: 'Saya menyetujui '),
+                          const TextSpan(
                             text: 'Syarat & Ketentuan',
                             style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          TextSpan(text: ' serta '),
+                          const TextSpan(text: ' serta '),
                           TextSpan(
                             text: 'Kebijakan Privasi',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: AppColors.primary,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
                             ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => Navigator.pushNamed(context, '/privacy-policy'),
                           ),
-                          TextSpan(text: ' yang berlaku'),
+                          const TextSpan(text: ' yang berlaku'),
                         ],
                       ),
                     ),

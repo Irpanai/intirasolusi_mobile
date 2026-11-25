@@ -281,36 +281,33 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          // Badge Resmi Berizin OJK di Header
+          // Badge Layanan Resmi & Aman di Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 1,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Berizin & Diawasi oleh',
+              children: const [
+                Icon(
+                  Icons.verified_user_outlined,
+                  color: Colors.white,
+                  size: 14,
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Layanan Gadai Resmi • Aman & Terpercaya',
                   style: TextStyle(
-                    color: Color(0xFF334155),
-                    fontSize: 10.5,
+                    color: Colors.white,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
-                ),
-                const SizedBox(width: 7),
-                Image.asset(
-                  'assets/images/ojk_logo.png',
-                  height: 16,
-                  fit: BoxFit.contain,
                 ),
               ],
             ),
@@ -566,17 +563,15 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/images/ojk_logo.png',
-                height: 22,
-                fit: BoxFit.contain,
+            children: const [
+              Icon(
+                Icons.shield_outlined,
+                color: Color(0xFF15803D),
+                size: 16,
               ),
-              const SizedBox(width: 10),
-              Container(width: 1, height: 18, color: const Color(0xFFCBD5E1)),
-              const SizedBox(width: 10),
-              const Text(
-                'Berizin & Diawasi Resmi OJK',
+              SizedBox(width: 8),
+              Text(
+                'PT. Gadai Intira Nusantara',
                 style: TextStyle(
                   color: Color(0xFF334155),
                   fontSize: 12,
@@ -597,7 +592,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             SizedBox(width: 6),
             Text(
-              'Terpercaya & Berizin Resmi • Keamanan Terjamin',
+              'Terpercaya & Transparan • Keamanan Terjamin',
               style: TextStyle(
                 color: Color(0xFF94A3B8),
                 fontSize: 11.5,

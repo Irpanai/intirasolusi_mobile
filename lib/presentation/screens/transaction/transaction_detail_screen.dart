@@ -857,7 +857,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          isSharia ? 'Akad Syariah Resmi OJK' : 'Gadai Resmi Berizin OJK',
+                          isSharia ? 'Akad Syariah Resmi' : 'Gadai Resmi & Aman',
                           style: const TextStyle(
                             fontSize: 11,
                             color: Color(0xFF15803D),
@@ -924,7 +924,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           _buildAkadRow('Jenis Akad', akadType),
           _buildAkadRow(
             'Pemberi Pinjaman',
-            'PT Intira Solusi Finansial (${tx.branchName ?? "Cabang"})',
+            'PT. Gadai Intira Nusantara (${tx.branchName ?? "Cabang"})',
           ),
           if (tx.customerName != null && tx.customerName!.isNotEmpty)
             _buildAkadRow(
@@ -1039,7 +1039,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       'Penerima Gadai berhak menyimpan dan memelihara barang agunan serta mengenakan biaya sewa tempat/pemeliharaan (Ujroh) sesuai ketentuan resmi yang disepakati bersama.',
       'Pemberi Gadai berkewajiban melunasi seluruh pinjaman pokok beserta ujroh/biaya administrasi selambat-lambatnya pada tanggal jatuh tempo yang telah disepakati.',
       'Apabila pada tanggal jatuh tempo Pemberi Gadai belum dapat melunasi pinjaman pokok, Pemberi Gadai dapat mengajukan perpanjangan akad dengan melunasi kewajiban ujroh berjalan sesuai ketentuan.',
-      'Apabila Pemberi Gadai tidak melunasi pinjaman dan masa toleransi lelang terlewati, Penerima Gadai berhak melakukan penjualan/lelang atas barang jaminan untuk pelunasan kewajiban pinjaman sesuai regulasi POJK yang berlaku.',
+      'Apabila Pemberi Gadai tidak melunasi pinjaman dan masa toleransi lelang terlewati, Penerima Gadai berhak melakukan penjualan/lelang atas barang jaminan untuk pelunasan kewajiban pinjaman sesuai ketentuan perjanjian gadai dan peraturan perundang-undangan yang berlaku.',
     ];
 
     showModalBottomSheet(
@@ -1128,7 +1128,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'PT INTIRA SOLUSI FINANSIAL',
+                                'PT. GADAI INTIRA NUSANTARA',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -1144,7 +1144,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Text(
-                                  'BERIZIN & DIAWASI OTORITAS JASA KEUANGAN (OJK)',
+                                  'DOKUMEN AKAD ELEKTRONIK RESMI',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -1182,7 +1182,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         const SizedBox(height: 8),
                         _buildDocRow(
                           'Pihak Pertama (Murtahin)',
-                          'PT Intira Solusi Finansial - Cabang ${tx.branchName ?? "Utama"}',
+                          'PT. Gadai Intira Nusantara - Cabang ${tx.branchName ?? "Utama"}',
                         ),
                         _buildDocRow(
                           'Pihak Kedua (Rahin)',
@@ -1318,7 +1318,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               ),
                               const SizedBox(height: 6),
                               const Text(
-                                'Dokumen ini merupakan salinan digital sah dari Surat Bukti Gadai (SBG) yang diterbitkan melalui sistem elektronik PT Intira Solusi Finansial dan memiliki kekuatan hukum yang mengikat Para Pihak sesuai regulasi POJK No. 31/POJK.05/2016 serta UU ITE.',
+                                'Dokumen ini merupakan salinan digital sah dari Surat Bukti Gadai (SBG) yang diterbitkan melalui sistem elektronik PT. Gadai Intira Nusantara dan memiliki kekuatan hukum yang mengikat Para Pihak sesuai perjanjian gadai serta regulasi UU ITE yang berlaku.',
                                 style: TextStyle(
                                   fontSize: 11,
                                   height: 1.4,

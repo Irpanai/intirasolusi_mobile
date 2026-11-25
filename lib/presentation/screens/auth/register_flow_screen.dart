@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -1470,27 +1471,31 @@ class _RegisterFlowScreenState extends State<RegisterFlowScreen> {
                       child: GestureDetector(
                         onTap: () => setState(() => _agreeTerms = !_agreeTerms),
                         child: RichText(
-                          text: const TextSpan(
-                            style: TextStyle(
+                          text: TextSpan(
+                            style: const TextStyle(
                                 fontSize: 12.5,
                                 color: Color(0xFF475569),
                                 height: 1.4),
                             children: [
-                              TextSpan(text: 'Saya menyetujui '),
-                              TextSpan(
+                              const TextSpan(text: 'Saya menyetujui '),
+                              const TextSpan(
                                 text: 'Syarat & Ketentuan',
                                 style: TextStyle(
                                     color: Color(0xFF15803D),
                                     fontWeight: FontWeight.bold),
                               ),
-                              TextSpan(text: ' serta '),
+                              const TextSpan(text: ' serta '),
                               TextSpan(
                                 text: 'Kebijakan Privasi',
-                                style: TextStyle(
-                                    color: Color(0xFF15803D),
-                                    fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  color: Color(0xFF15803D),
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => Navigator.pushNamed(context, '/privacy-policy'),
                               ),
-                              TextSpan(text: ' GASPOL by INTIRA.'),
+                              const TextSpan(text: ' GASPOL by INTIRA.'),
                             ],
                           ),
                         ),
